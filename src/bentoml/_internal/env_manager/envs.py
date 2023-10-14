@@ -69,11 +69,7 @@ class Environment(ABC):
         if shell_path is None:
             raise BentoMLException("Unable to locate a valid shell")
 
-        safer_bash_args: list[str] = []
-
-        # but only work in bash
-        if debug_mode:
-            safer_bash_args = ["-euxo", "pipefail"]
+        safer_bash_args = ["-euxo", "pipefail"] if debug_mode else []
         result = subprocess.run(
             [shell_path, *safer_bash_args, script_file_path],
             capture_output=capture_output,

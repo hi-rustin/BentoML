@@ -11,13 +11,13 @@ if __name__ == "__main__":
     lr = LogisticRegression()
     lr.fit(X, y)
     score = lr.score(X, y)
-    print("Score: %s" % score)
+    print(f"Score: {score}")
     mlflow.log_metric("score", score)
     logged_model = mlflow.sklearn.log_model(lr, "model")
-    print("Model saved in run %s" % mlflow.active_run().info.run_uuid)
+    print(f"Model saved in run {mlflow.active_run().info.run_uuid}")
 
     # Import logged mlflow model to BentoML model store for serving:
     bento_model = bentoml.mlflow.import_model(
         "logistic_regression_model", logged_model.model_uri
     )
-    print("Model imported to BentoML: %s" % bento_model)
+    print(f"Model imported to BentoML: {bento_model}")

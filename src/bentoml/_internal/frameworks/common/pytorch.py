@@ -186,8 +186,7 @@ class PyTorchTensorContainer(DataContainer[torch.Tensor, torch.Tensor]):
         plasma_db: "ext.PlasmaClient" | None = Provide[BentoMLContainer.plasma_db],
     ) -> t.List[Payload]:
         batches = cls.batch_to_batches(batch, indices, batch_dim)
-        payloads = [cls.to_payload(i, batch_dim=batch_dim) for i in batches]
-        return payloads
+        return [cls.to_payload(i, batch_dim=batch_dim) for i in batches]
 
     @classmethod
     @inject

@@ -75,12 +75,11 @@ class PrometheusClient:
             if self.multiproc:
                 self._pid = os.getpid()
             self._registry = self.prometheus_client.REGISTRY
-        else:
-            if self.multiproc:
-                assert self._pid is not None
-                assert (
-                    os.getpid() == self._pid
-                ), "The current process's different than the process which the prometheus client gets created"
+        elif self.multiproc:
+            assert self._pid is not None
+            assert (
+                os.getpid() == self._pid
+            ), "The current process's different than the process which the prometheus client gets created"
 
         return self._registry
 
@@ -120,12 +119,11 @@ class PrometheusClient:
         return self.prometheus_client.make_wsgi_app(registry=self.registry)  # type: ignore (unfinished prometheus types)
 
     def generate_latest(self):
-        if self.multiproc:
-            registry = self.prometheus_client.CollectorRegistry()
-            self.prometheus_client.multiprocess.MultiProcessCollector(registry)
-            return self.prometheus_client.generate_latest(registry)
-        else:
+        if not self.multiproc:
             return self.prometheus_client.generate_latest()
+        registry = self.prometheus_client.CollectorRegistry()
+        self.prometheus_client.multiprocess.MultiProcessCollector(registry)
+        return self.prometheus_client.generate_latest(registry)
 
     def text_string_to_metric_families(self) -> t.Generator[Metric, None, None]:
         yield from self.prometheus_client.parser.text_string_to_metric_families(

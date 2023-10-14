@@ -989,10 +989,7 @@ class BentoCloudClient(CloudClient):
         if res is None:
             raise BentoMLException("List bentos request failed")
 
-        res.items = [
-            bento
-            for bento in sorted(res.items, key=lambda x: x.created_at, reverse=True)
-        ]
+        res.items = list(sorted(res.items, key=lambda x: x.created_at, reverse=True))
         return res
 
     def list_models(self, context: str | None = None) -> ModelWithRepositoryListSchema:
@@ -1001,8 +998,5 @@ class BentoCloudClient(CloudClient):
         if res is None:
             raise BentoMLException("List models request failed")
 
-        res.items = [
-            model
-            for model in sorted(res.items, key=lambda x: x.created_at, reverse=True)
-        ]
+        res.items = list(sorted(res.items, key=lambda x: x.created_at, reverse=True))
         return res

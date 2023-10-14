@@ -101,8 +101,7 @@ class ServiceReloaderPlugin(CircusPlugin):
     def has_modification(self) -> bool:
         for changes in self.file_changes:
             uniq_paths = {Path(c[1]) for c in changes}
-            filtered = [c for c in uniq_paths if self.should_include(c)]
-            if filtered:
+            if filtered := [c for c in uniq_paths if self.should_include(c)]:
                 change_type, path = self.display_path(changes)
                 logger.warning("%s: %s", change_type.upper(), path)
                 return True

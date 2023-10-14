@@ -3,6 +3,7 @@ This module is shim for bentoctl. NOT FOR DIRECT USE.
 Make sure to use 'bentoml.container.build' and 'bentoml.container.health' instead.
 """
 
+
 from __future__ import annotations
 
 import typing as t
@@ -16,8 +17,7 @@ __all__ = ["build", "health"]
 _buildx_backend = get_backend("buildx")
 
 warnings.warn(
-    "%s is deprecated. Make sure to use 'bentoml.container.build' and 'bentoml.container.health' instead."
-    % __name__,
+    f"{__name__} is deprecated. Make sure to use 'bentoml.container.build' and 'bentoml.container.health' instead.",
     DeprecationWarning,
     stacklevel=4,
 )

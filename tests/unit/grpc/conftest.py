@@ -39,4 +39,4 @@ class TestServiceServicer(services.TestServiceServicer):
         request: pb.ExecuteRequest,
         context: aio.ServicerContext[pb.ExecuteRequest, pb.ExecuteResponse],
     ) -> pb.ExecuteResponse:
-        return pb.ExecuteResponse(output="Hello, {}!".format(request.input))
+        return pb.ExecuteResponse(output=f"Hello, {request.input}!")

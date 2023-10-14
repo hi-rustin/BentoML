@@ -265,7 +265,7 @@ BENTOML_simple_service_request_total{endpoint="/predict",http_response_code="200
 
     endpoints = [filtered["endpoint"] for filtered in output]
 
-    assert not any(x in endpoints for x in analytics.usage_stats.EXCLUDE_PATHS)
+    assert all(x not in endpoints for x in analytics.usage_stats.EXCLUDE_PATHS)
 
 
 @patch("bentoml._internal.server.metrics.prometheus.PrometheusClient")

@@ -152,9 +152,9 @@ def construct_containerfile(
     dockerfile_path = "env/docker/Dockerfile"
     instruction: list[str] = []
 
-    with fs.open_fs("temp://") as temp_fs, open(
-        bento.path_of("bento.yaml"), "rb"
-    ) as bento_yaml:
+    with (fs.open_fs("temp://") as temp_fs, open(
+            bento.path_of("bento.yaml"), "rb"
+        ) as bento_yaml):
         tempdir = temp_fs.getsyspath("/")
         options = BentoInfo.from_yaml_file(bento_yaml)
         # tmpdir is our new build context.
@@ -194,8 +194,7 @@ def construct_containerfile(
         )
         instruction.append(dockerfile)
         if features is not None:
-            diff = set(features).difference(FEATURES)
-            if len(diff) > 0:
+            if diff := set(features).difference(FEATURES):
                 raise InvalidArgument(
                     f"Available features are: {FEATURES}. Invalid fields from provided: {diff}"
                 )
@@ -203,7 +202,7 @@ def construct_containerfile(
                 "--mount=type=cache,target=/root/.cache/pip " if enable_buildkit else ""
             )
             instruction.append(
-                "RUN %spip install bentoml[%s]" % (PIP_CACHE_MOUNT, ",".join(features))
+                f'RUN {PIP_CACHE_MOUNT}pip install bentoml[{",".join(features)}]'
             )
         temp_fs.writetext(dockerfile_path, "\n".join(instruction))
         yield tempdir, temp_fs.getsyspath(dockerfile_path)

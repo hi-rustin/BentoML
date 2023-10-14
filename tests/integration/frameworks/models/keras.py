@@ -34,14 +34,11 @@ class CustomLayer(keras.layers.Layer):
         self.units = tf.Variable(units, name="units")
 
     def call(self, inputs: t.Any, *args: t.Any, training: bool = False):
-        if training:
-            return inputs * self.units
-        else:
-            return inputs
+        return inputs * self.units if training else inputs
 
     def get_config(self):
         config: dict[str, t.Any] = super().get_config()
-        config.update({"units": self.units.numpy()})
+        config["units"] = self.units.numpy()
         return config
 
 

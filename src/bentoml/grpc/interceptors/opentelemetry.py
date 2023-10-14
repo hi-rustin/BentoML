@@ -161,8 +161,7 @@ class AsyncOpenTelemetryServerInterceptor(aio.ServerInterceptor):
     async def set_remote_context(
         self, servicer_context: BentoServicerContext
     ) -> t.AsyncGenerator[None, None]:
-        metadata = servicer_context.invocation_metadata()
-        if metadata:
+        if metadata := servicer_context.invocation_metadata():
             md: dict[MetadataKey, MetadataValue] = {m.key: m.value for m in metadata}
             ctx = extract(md)
             token = attach(ctx)
@@ -194,16 +193,12 @@ class AsyncOpenTelemetryServerInterceptor(aio.ServerInterceptor):
             }
         )
 
-        # add some attributes from the metadata
-        metadata = context.invocation_metadata()
-        if metadata:
+        if metadata := context.invocation_metadata():
             dct: dict[str, str | bytes] = dict(metadata)
             if "user-agent" in dct:
                 attributes["rpc.user_agent"] = dct["user-agent"]
 
-        # get trailing metadata
-        trailing_metadata: MetadataType | None = context.trailing_metadata()
-        if trailing_metadata:
+        if trailing_metadata := context.trailing_metadata():
             trailing = dict(trailing_metadata)
             attributes["rpc.content_type"] = trailing.get(
                 "content-type", GRPC_CONTENT_TYPE

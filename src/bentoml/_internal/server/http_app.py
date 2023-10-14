@@ -182,11 +182,7 @@ class HTTPAppFactory(BaseAppFactory):
 
         for _, api in self.bento_service.apis.items():
             api_route_endpoint = self._create_api_endpoint(api)
-            if api.route.startswith("/"):
-                route_path = api.route
-            else:
-                route_path = f"/{api.route}"
-
+            route_path = api.route if api.route.startswith("/") else f"/{api.route}"
             routes.append(
                 Route(
                     path=route_path,
@@ -267,8 +263,10 @@ class HTTPAppFactory(BaseAppFactory):
             self.bento_service.on_asgi_app_startup,
         ]
         if BentoMLContainer.development_mode.get():
-            for runner in self.bento_service.runners:
-                on_startup.append(functools.partial(runner.init_local, quiet=True))
+            on_startup.extend(
+                functools.partial(runner.init_local, quiet=True)
+                for runner in self.bento_service.runners
+            )
         else:
             for runner in self.bento_service.runners:
                 if runner.embedded:
@@ -296,8 +294,7 @@ class HTTPAppFactory(BaseAppFactory):
             *self.bento_service.shutdown_hooks,
             self.bento_service.on_asgi_app_shutdown,
         ]
-        for runner in self.bento_service.runners:
-            on_shutdown.append(runner.destroy)
+        on_shutdown.extend(runner.destroy for runner in self.bento_service.runners)
         on_shutdown.extend(super().on_shutdown)
         return on_shutdown
 
@@ -381,8 +378,7 @@ class HTTPAppFactory(BaseAppFactory):
                     status = e.error_code.value
                     if 400 <= status < 500 and status not in (401, 403):
                         response = JSONResponse(
-                            content="BentoService error handling API request: %s"
-                            % str(e),
+                            content=f"BentoService error handling API request: {str(e)}",
                             status_code=status,
                         )
                     else:

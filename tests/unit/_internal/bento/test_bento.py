@@ -200,7 +200,7 @@ def test_bento_export(tmpdir: "Path", model_store: "ModelStore"):
     bento = testbento
     path = os.path.join(tmpdir, "testbento")
     export_path = bento.export(path)
-    assert export_path == path + ".bento"
+    assert export_path == f"{path}.bento"
     assert os.path.isfile(export_path)
     imported_bento = Bento.import_from(export_path)
     assert imported_bento.tag == bento.tag
@@ -210,7 +210,7 @@ def test_bento_export(tmpdir: "Path", model_store: "ModelStore"):
     bento = bentoa
     path = os.path.join(tmpdir, "bentoa")
     export_path = bento.export(path)
-    assert export_path == path + ".bento"
+    assert export_path == f"{path}.bento"
     assert os.path.isfile(export_path)
     imported_bento = Bento.import_from(export_path)
     assert imported_bento.tag == bento.tag
@@ -220,7 +220,7 @@ def test_bento_export(tmpdir: "Path", model_store: "ModelStore"):
     bento = bentoa1
     path = os.path.join(tmpdir, "bentoa1")
     export_path = bento.export(path)
-    assert export_path == path + ".bento"
+    assert export_path == f"{path}.bento"
     assert os.path.isfile(export_path)
     imported_bento = Bento.import_from(export_path)
     assert imported_bento.tag == bento.tag
@@ -230,7 +230,7 @@ def test_bento_export(tmpdir: "Path", model_store: "ModelStore"):
     bento = bentob
     path = os.path.join(tmpdir, "bentob")
     export_path = bento.export(path)
-    assert export_path == path + ".bento"
+    assert export_path == f"{path}.bento"
     assert os.path.isfile(export_path)
     imported_bento = Bento.import_from(export_path)
     assert imported_bento.tag == bento.tag
@@ -250,7 +250,7 @@ def test_bento_export(tmpdir: "Path", model_store: "ModelStore"):
     path = os.path.join(tmpdir, "testbento-parent")
     os.mkdir(path)
     export_path = bento.export(path)
-    assert export_path == os.path.join(path, bento._export_name + ".bento")
+    assert export_path == os.path.join(path, f"{bento._export_name}.bento")
     assert os.path.isfile(export_path)
     imported_bento = Bento.import_from(export_path)
     assert imported_bento.tag == bento.tag
@@ -264,7 +264,7 @@ def test_bento_export(tmpdir: "Path", model_store: "ModelStore"):
     path = os.path.join(tmpdir, "bento-dir")
     os.mkdir(path)
     export_path = bento.export(path)
-    assert export_path == os.path.join(path, bento._export_name + ".bento")
+    assert export_path == os.path.join(path, f"{bento._export_name}.bento")
     assert os.path.isfile(export_path)
     imported_bento = Bento.import_from(export_path)
     assert imported_bento.tag == bento.tag
@@ -274,7 +274,7 @@ def test_bento_export(tmpdir: "Path", model_store: "ModelStore"):
     path = "temp://pytest-some-temp"
     export_path = bento.export(path)
     assert export_path.endswith(
-        os.path.join("pytest-some-temp", bento._export_name + ".bento")
+        os.path.join("pytest-some-temp", f"{bento._export_name}.bento")
     )
     # because this is a tempdir, it's cleaned up immediately after creation...
 
@@ -286,7 +286,7 @@ def test_bento_export(tmpdir: "Path", model_store: "ModelStore"):
     assert imported_bento.tag == bento.tag
     assert imported_bento.info == bento.info
     del imported_bento
-    imported_bento = Bento.import_from(path + ".bento")
+    imported_bento = Bento.import_from(f"{path}.bento")
     assert imported_bento.tag == bento.tag
     assert imported_bento.info == bento.info
     del imported_bento
@@ -306,7 +306,7 @@ def test_bento_export(tmpdir: "Path", model_store: "ModelStore"):
     path = os.path.join(tmpdir, "testbento-gz")
     os.mkdir(path)
     export_path = bento.export(path, output_format="gz")
-    assert export_path == os.path.join(path, bento._export_name + ".gz")
+    assert export_path == os.path.join(path, f"{bento._export_name}.gz")
     assert os.path.isfile(export_path)
     imported_bento = Bento.import_from(export_path)
     assert imported_bento.tag == bento.tag

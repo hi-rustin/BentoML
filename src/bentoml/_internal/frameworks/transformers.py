@@ -410,7 +410,7 @@ def load_model(bento_model: str | Tag | Model, *args: t.Any, **kwargs: t.Any) ->
         # Set trust_remote_code to True to allow loading custom pipeline.
         kwargs.setdefault("trust_remote_code", False)
         kwargs.update(options.kwargs)
-        if len(kwargs) > 0:
+        if kwargs:
             logger.debug(
                 "Loading '%s' pipeline (tag='%s') with kwargs %s.",
                 task,
@@ -470,7 +470,7 @@ def load_model(bento_model: str | Tag | Model, *args: t.Any, **kwargs: t.Any) ->
             return protocol.from_pretrained(bento_model.path, *args, **kwargs)
         else:
             assert (
-                len(args) == 0
+                not args
             ), "Positional args are not supported for pipeline. Make sure to only use kwargs instead."
             with open(bento_model.path_of(PIPELINE_PICKLE_NAME), "rb") as f:
                 pipeline_class: type[transformers.Pipeline] = cloudpickle.load(f)
@@ -504,7 +504,7 @@ def load_model(bento_model: str | Tag | Model, *args: t.Any, **kwargs: t.Any) ->
             ), f"Task '{task}' is not a valid task for pipeline (available: {get_supported_tasks()})."
 
             kwargs.update(options.kwargs)
-            if len(kwargs) > 0:
+            if kwargs:
                 logger.debug(
                     "Loading '%s' pipeline (tag='%s') with kwargs %s.",
                     task,
@@ -749,7 +749,18 @@ def save_model(
 
         pipeline_ = t.cast("transformers.Pipeline", pretrained_or_pipeline)
 
-        if task_name is not None and task_definition is not None:
+        if task_name is None or task_definition is None:
+            assert (
+                task_definition is None
+            ), "'task_definition' must be None if 'task_name' is not provided."
+
+            # if task_name is None, then we derive the task from pipeline.task
+            options_args = t.cast(
+                "tuple[str, TaskDefinition]",
+                check_task(pipeline_.task if task_name is None else task_name)[:2],
+            )
+
+        else:
             logger.info(
                 "Arguments 'task_name' and 'task_definition' are provided. Saving model with pipeline task name '%s' and task definition '%s'.",
                 task_name,
@@ -779,17 +790,6 @@ def save_model(
             assert (
                 task_name in get_supported_tasks()
             ), f"Task '{task_name}' failed to register into pipeline registry."
-        else:
-            assert (
-                task_definition is None
-            ), "'task_definition' must be None if 'task_name' is not provided."
-
-            # if task_name is None, then we derive the task from pipeline.task
-            options_args = t.cast(
-                "tuple[str, TaskDefinition]",
-                check_task(pipeline_.task if task_name is None else task_name)[:2],
-            )
-
         with bentoml.models.create(
             name,
             module=MODULE_NAME,

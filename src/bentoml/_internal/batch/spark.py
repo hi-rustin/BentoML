@@ -148,16 +148,16 @@ def run_in_spark(
     svc = load_bento(bento)
 
     if api_name is None:
-        if len(svc.apis) != 1:
+        if len(svc.apis) == 1:
+            api_name = next(iter(svc.apis))
+        else:
             raise BentoMLException(
                 f'Bento "{bento.tag}" has multiple APIs ({svc.apis.keys()}), specify which API should be run, e.g.: bentoml.batch.run_in_spark("my_service:latest", df, spark, api_name="predict")'
             )
-        api_name = next(iter(svc.apis))
-    else:
-        if api_name not in svc.apis:
-            raise BentoMLException(
-                f"API name '{api_name}' not found in Bento '{bento.tag}', available APIs are {svc.apis.keys()}"
-            )
+    elif api_name not in svc.apis:
+        raise BentoMLException(
+            f"API name '{api_name}' not found in Bento '{bento.tag}', available APIs are {svc.apis.keys()}"
+        )
 
     api = svc.apis[api_name]
 

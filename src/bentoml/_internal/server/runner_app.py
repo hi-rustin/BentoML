@@ -110,8 +110,9 @@ class RunnerAppFactory(BaseAppFactory):
     @property
     def on_shutdown(self) -> list[LifecycleHook]:
         on_shutdown: list[LifecycleHook] = [self.runner.destroy]
-        for dispatcher in self.dispatchers.values():
-            on_shutdown.append(dispatcher.shutdown)
+        on_shutdown.extend(
+            dispatcher.shutdown for dispatcher in self.dispatchers.values()
+        )
         on_shutdown.extend(super().on_shutdown)
         return on_shutdown
 
@@ -132,7 +133,7 @@ class RunnerAppFactory(BaseAppFactory):
 
         routes = super().routes
         for method in self.runner.runner_methods:
-            path = "/" if method.name == "__call__" else "/" + method.name
+            path = "/" if method.name == "__call__" else f"/{method.name}"
             routes.append(
                 Route(
                     path=path,
@@ -329,10 +330,8 @@ def _deserialize_single_param(request: Request, bs: bytes) -> Params[t.Any]:
         batch_size=batch_size,
         container=container,
     )
-    if kwarg_name:
-        d = {kwarg_name: payload}
-        params: Params[t.Any] = Params(**d)
-    else:
-        params: Params[t.Any] = Params(payload)
+    if not kwarg_name:
+        return Params(payload)
 
-    return params
+    d = {kwarg_name: payload}
+    return Params(**d)

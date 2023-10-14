@@ -66,10 +66,10 @@ class Deployment:
         context: str | None = None,
     ) -> str:
         cloud_rest_client = get_rest_api_client(context)
-        res = cloud_rest_client.get_cluster(cluster_name)
-        if not res:
+        if res := cloud_rest_client.get_cluster(cluster_name):
+            return res.config.default_deployment_kube_namespace
+        else:
             raise BentoMLException("Cannot get default kube namespace")
-        return res.config.default_deployment_kube_namespace
 
     @classmethod
     def _get_default_cluster(cls, context: str | None = None) -> str:

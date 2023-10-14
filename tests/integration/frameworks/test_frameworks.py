@@ -44,8 +44,7 @@ def test_backward_warnings(
         or framework.__test_backward_compatible__ is False
     ):
         pytest.skip(
-            "Module '%s' does not have a backward compatible warning."
-            % framework.__name__
+            f"Module '{framework.__name__}' does not have a backward compatible warning."
         )
     if hasattr(framework, "save"):
         with caplog.at_level(logging.WARNING):

@@ -49,7 +49,7 @@ def create_test_bento_servicer(
             f".{protocol_version}", package="bentoml._internal.server.grpc.servicer"
         )
         return getattr(module, "create_bento_servicer")(service)
-    except (ImportError, ModuleNotFoundError):
+    except ImportError:
         raise BentoMLException(
             f"Failed to load servicer implementation for version {protocol_version}"
         ) from None

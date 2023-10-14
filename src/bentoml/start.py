@@ -96,7 +96,6 @@ def start_runner_server(
                             numprocesses=runner.scheduled_worker_count,
                         )
                     )
-                    break
                 else:
                     cli_args = runner.cli_args + [
                         f"--http-port={runner.protocol_address.split(':')[-1]}"
@@ -113,7 +112,7 @@ def start_runner_server(
                             numprocesses=1,
                         )
                     )
-                    break
+                break
         else:
             raise ValueError(
                 f"Runner {runner_name} not found in the service: `{bento_identifier}`, "
@@ -174,15 +173,12 @@ def start_http_server(
         raise ValueError(
             f"{bento_identifier} requires runners {runner_requirements}, but only {set(runner_map)} are provided."
         )
-    watchers: list[Watcher] = []
-    circus_socket_map: dict[str, CircusSocket] = {}
     logger.debug("Runner map: %s", runner_map)
-    circus_socket_map[API_SERVER_NAME] = CircusSocket(
-        name=API_SERVER_NAME,
-        host=host,
-        port=port,
-        backlog=backlog,
-    )
+    circus_socket_map: dict[str, CircusSocket] = {
+        API_SERVER_NAME: CircusSocket(
+            name=API_SERVER_NAME, host=host, port=port, backlog=backlog
+        )
+    }
     ssl_args = construct_ssl_args(
         ssl_certfile=ssl_certfile,
         ssl_keyfile=ssl_keyfile,
@@ -193,7 +189,7 @@ def start_http_server(
         ssl_ciphers=ssl_ciphers,
     )
     scheme = "https" if BentoMLContainer.ssl.enabled.get() else "http"
-    watchers.append(
+    watchers: list[Watcher] = [
         create_watcher(
             name="api_server",
             args=[
@@ -217,7 +213,7 @@ def start_http_server(
             working_dir=working_dir,
             numprocesses=api_workers,
         )
-    )
+    ]
     if BentoMLContainer.api_server_config.metrics.enabled.get():
         logger.info(
             PROMETHEUS_MESSAGE,

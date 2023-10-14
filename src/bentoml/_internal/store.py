@@ -78,22 +78,21 @@ class Store(ABC, t.Generic[Item]):
             ]
 
         _tag = Tag.from_taglike(tag)
-        if _tag.version is None:
-            if not self._fs.isdir(_tag.name):
-                raise NotFound(
-                    f"no {self._item_type.get_typename()}s with name '{_tag.name}' found"
-                )
-
-            tags = sorted(
-                [
-                    Tag(_tag.name, f.name)
-                    for f in self._fs.scandir(_tag.name)
-                    if f.is_dir
-                ]
-            )
-            return [self._get_item(t) for t in tags]
-        else:
+        if _tag.version is not None:
             return [self._get_item(_tag)] if self._fs.isdir(_tag.path()) else []
+        if not self._fs.isdir(_tag.name):
+            raise NotFound(
+                f"no {self._item_type.get_typename()}s with name '{_tag.name}' found"
+            )
+
+        tags = sorted(
+            [
+                Tag(_tag.name, f.name)
+                for f in self._fs.scandir(_tag.name)
+                if f.is_dir
+            ]
+        )
+        return [self._get_item(t) for t in tags]
 
     def _get_item(self, tag: Tag) -> Item:
         """

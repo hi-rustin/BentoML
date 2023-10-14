@@ -56,8 +56,7 @@ prngkey = random.PRNGKey(42)
 
 def init_mlp_state():
     net = MLP()
-    params = net.init({"params": prngkey}, ones_array)
-    return params
+    return net.init({"params": prngkey}, ones_array)
 
 
 def assert_equal_shape(

@@ -164,24 +164,22 @@ class Text(IODescriptor[str], descriptor_id="bentoml.io.Text", proto_fields=("te
         return str(obj.decode("utf-8"))
 
     async def to_http_response(self, obj: str, ctx: Context | None = None) -> Response:
-        if ctx is not None:
-            res = Response(
-                obj,
-                media_type=self._mime_type,
-                headers=ctx.response.metadata,  # type: ignore (bad starlette types)
-                status_code=ctx.response.status_code,
-            )
-            set_cookies(res, ctx.response.cookies)
-            return res
-        else:
+        if ctx is None:
             return Response(obj, media_type=self._mime_type)
+        res = Response(
+            obj,
+            media_type=self._mime_type,
+            headers=ctx.response.metadata,  # type: ignore (bad starlette types)
+            status_code=ctx.response.status_code,
+        )
+        set_cookies(res, ctx.response.cookies)
+        return res
 
     async def from_proto(self, field: wrappers_pb2.StringValue | bytes) -> str:
         if isinstance(field, bytes):
             return field.decode("utf-8")
-        else:
-            assert isinstance(field, wrappers_pb2.StringValue)
-            return field.value
+        assert isinstance(field, wrappers_pb2.StringValue)
+        return field.value
 
     async def to_proto(self, obj: str) -> wrappers_pb2.StringValue:
         return wrappers_pb2.StringValue(value=obj)

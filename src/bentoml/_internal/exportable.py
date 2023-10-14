@@ -114,15 +114,14 @@ class Exportable(ABC):
 
         isCompressedPath = protocol in ["tar", "zip"]
 
-        if input_format is not None:
-            if isCompressedPath:
-                raise ValueError(
-                    f"A {protocol} path was passed along with an input format ({input_format}); only pass one or the other."
-                )
-        else:
+        if input_format is None:
             # try to guess output format if it hasn't been passed
             input_format = cls.guess_format(resource if subpath is None else subpath)
 
+        elif isCompressedPath:
+            raise ValueError(
+                f"A {protocol} path was passed along with an input format ({input_format}); only pass one or the other."
+            )
         if subpath is None:
             if isCompressedPath:
                 subpath = ""
@@ -135,7 +134,7 @@ class Exportable(ABC):
             try:
                 rsc_dir = fs.open_fs(f"{protocol}://{resource}")
                 # if subpath is root, we can just open directly
-                if (subpath == "" or subpath == "/") and input_format == "folder":
+                if subpath in ["", "/"] and input_format == "folder":
                     return cls.from_fs(rsc_dir)
 
                 # if subpath is specified, we need to create our own temp fs and mirror that subpath
@@ -145,19 +144,19 @@ class Exportable(ABC):
                 raise ValueError("Directory does not exist")
         else:
             userblock = ""
-            if user is not None or passwd is not None:
-                if user is not None:
-                    userblock += urllib.parse.quote(user)
+            if user is not None:
+                userblock += urllib.parse.quote(user)
                 if passwd is not None:
-                    userblock += ":" + urllib.parse.quote(passwd)
+                    userblock += f":{urllib.parse.quote(passwd)}"
+                userblock += "@"
+
+            elif passwd is not None:
+                userblock += f":{urllib.parse.quote(passwd)}"
                 userblock += "@"
 
             resource = urllib.parse.quote(resource)
 
-            query = ""
-            if params is not None:
-                query = "?" + urllib.parse.urlencode(params)
-
+            query = f"?{urllib.parse.urlencode(params)}" if params is not None else ""
             input_uri = f"{protocol}://{userblock}{resource}{query}"
 
             if isCompressedPath:

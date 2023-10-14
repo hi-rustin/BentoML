@@ -79,10 +79,7 @@ class MultiOutputModel2(tf.Module):
 
     @tf.function
     def __call__(self, x):
-        if x.shape[0] > 2:
-            return (x * self.v, x)
-        else:
-            return x
+        return (x * self.v, x) if x.shape[0] > 2 else x
 
 
 def make_keras_sequential_model() -> tf.keras.models.Model:

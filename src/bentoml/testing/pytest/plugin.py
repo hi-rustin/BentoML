@@ -111,20 +111,17 @@ def _setup_deployment_mode(metafunc: Metafunc):
         # Codespaces, we can run container-based tests.
         # Note that inside the remote container, it is already running as a Linux container.
         deployment_mode = ["distributed", "standalone"]
-    else:
-        if os.environ.get("GITHUB_ACTIONS") and (psutil.WINDOWS or psutil.MACOS):
+    elif os.environ.get("GITHUB_ACTIONS") and (psutil.WINDOWS or psutil.MACOS):
             # Due to GitHub Actions' limitation, we can't run container-based tests
             # on Windows and macOS. However, we can still running those tests on
             # local development.
-            if psutil.MACOS:
-                deployment_mode = ["distributed", "standalone"]
-            else:
-                deployment_mode = ["standalone"]
-        else:
-            if psutil.WINDOWS:
-                deployment_mode = ["standalone", "container"]
-            else:
-                deployment_mode = ["distributed", "standalone", "container"]
+        deployment_mode = (
+            ["distributed", "standalone"] if psutil.MACOS else ["standalone"]
+        )
+    elif psutil.WINDOWS:
+        deployment_mode = ["standalone", "container"]
+    else:
+        deployment_mode = ["distributed", "standalone", "container"]
     metafunc.parametrize("deployment_mode", deployment_mode, scope="session")
 
 
@@ -282,8 +279,8 @@ def img_file(tmpdir: str) -> str:
 
     img_file_ = tmpdir.join("test_img.bmp")
     img = fromarray(np.random.randint(255, size=(10, 10, 3)).astype("uint8"))
-    img.save(str(img_file_))
-    return str(img_file_)
+    img.save(img_file_)
+    return img_file_
 
 
 @pytest.fixture()
@@ -292,7 +289,7 @@ def bin_file(tmpdir: str) -> str:
     bin_file_ = tmpdir.join("bin_file.bin")
     with open(bin_file_, "wb") as of:
         of.write("â".encode("gb18030"))
-    return str(bin_file_)
+    return bin_file_
 
 
 @pytest.fixture(scope="module", name="prom_client")

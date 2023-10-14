@@ -291,24 +291,22 @@ def conda_dependencies_validator(
         raise InvalidArgument(
             f"Expected 'conda.dependencies' to be a list of dependencies, got a '{type(value)}' instead."
         )
-    else:
-        conda_pip: list[CondaPipType] = [x for x in value if isinstance(x, dict)]
-        if len(conda_pip) > 0:
-            if len(conda_pip) > 1 or "pip" not in conda_pip[0]:
-                raise InvalidArgument(
-                    "Expected dictionary under `conda.dependencies` to ONLY have key `pip`"
+    if conda_pip := [x for x in value if isinstance(x, dict)]:
+        if len(conda_pip) > 1 or "pip" not in conda_pip[0]:
+            raise InvalidArgument(
+                "Expected dictionary under `conda.dependencies` to ONLY have key `pip`"
+            )
+        pip_list: list[str] = conda_pip[0]["pip"]
+        if not all(isinstance(x, str) for x in pip_list):
+            not_type_string = list(
+                map(
+                    lambda x: str(type(x)),
+                    filter(lambda x: not isinstance(x, str), pip_list),
                 )
-            pip_list: list[str] = conda_pip[0]["pip"]
-            if not all(isinstance(x, str) for x in pip_list):
-                not_type_string = list(
-                    map(
-                        lambda x: str(type(x)),
-                        filter(lambda x: not isinstance(x, str), pip_list),
-                    )
-                )
-                raise InvalidArgument(
-                    f"Expected 'conda.pip' values to be strings, got {not_type_string}"
-                )
+            )
+            raise InvalidArgument(
+                f"Expected 'conda.pip' values to be strings, got {not_type_string}"
+            )
 
 
 if t.TYPE_CHECKING:
@@ -385,14 +383,17 @@ class CondaOptions:
                     raise BentoMLException(
                         "Cannot not have both 'conda.dependencies.pip' and 'conda.pip'"
                     )
-                deps_list.append({"pip": self.pip})
+                else:
+                    deps_list.append({"pip": self.pip})
 
             if not deps_list:
                 return
 
-            yaml_content: CondaYamlDict = {"dependencies": deps_list}
             assert self.channels is not None
-            yaml_content["channels"] = self.channels
+            yaml_content: CondaYamlDict = {
+                "dependencies": deps_list,
+                "channels": self.channels,
+            }
             with bento_fs.open(
                 fs.path.combine(conda_folder, CONDA_ENV_YAML_FILE_NAME), "w"
             ) as f:
@@ -411,8 +412,7 @@ class CondaOptions:
         if os.path.exists(environment_yml):
             with open(environment_yml, "r") as f:
                 for line in f:
-                    match = re.search(r"(?:python=)(\d+.\d+)$", line)
-                    if match:
+                    if match := re.search(r"(?:python=)(\d+.\d+)$", line):
                         return match.group().split("=")[-1]
             logger.debug(
                 "No python version is specified under '%s'. Using the Python options specified under 'docker'.",
@@ -655,8 +655,7 @@ fi
                 ]
             )
             logger.info("Locking PyPI package versions.")
-            cmd = [sys.executable, "-m", "piptools", "compile"]
-            cmd.extend(pip_compile_args)
+            cmd = [sys.executable, "-m", "piptools", "compile", *pip_compile_args]
             try:
                 subprocess.check_call(cmd)
             except subprocess.CalledProcessError as e:
@@ -698,9 +697,7 @@ def dict_options_converter(
     def _converter(value: OptionsCls | dict[str, t.Any] | None) -> OptionsCls:
         if value is None:
             return options_type()
-        if isinstance(value, dict):
-            return options_type(**value)
-        return value
+        return options_type(**value) if isinstance(value, dict) else value
 
     return _converter
 
@@ -715,9 +712,7 @@ class ModelSpec:
     def from_item(cls, item: str | dict[str, t.Any] | ModelSpec) -> ModelSpec:
         if isinstance(item, str):
             return cls(tag=item)
-        if isinstance(item, ModelSpec):
-            return item
-        return cls(**item)
+        return item if isinstance(item, ModelSpec) else cls(**item)
 
 
 def convert_models_config(
@@ -902,14 +897,11 @@ class BentoPathSpec:
         *,
         recurse_exclude_spec: t.Optional[t.Iterable[t.Tuple[str, PathSpec]]] = None,
     ) -> bool:
-        # Determine whether a path is included or not.
-        # recurse_exclude_spec is a list of (path, spec) pairs.
-        to_include = (
+        if to_include := (
             self._include.match_file(path)
             and not self._exclude.match_file(path)
             and not self.git.match_file(path)
-        )
-        if to_include:
+        ):
             if recurse_exclude_spec is not None:
                 return not any(
                     ignore_spec.match_file(fs.path.relativefrom(ignore_parent, path))

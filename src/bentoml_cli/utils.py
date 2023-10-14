@@ -29,10 +29,7 @@ if TYPE_CHECKING:
         __name__: str
         __click_params__: list[Option]
 
-        def __call__(  # pylint: disable=no-method-argument
-            *args: P.args,
-            **kwargs: P.kwargs,
-        ) -> F[P]:
+        def __call__(self, **kwargs: P.kwargs) -> F[P]:
             ...
 
     WrappedCLI = t.Callable[P, ClickFunctionWrapper[P]]
@@ -58,19 +55,13 @@ def kwargs_transformers(
 
         return wrapper
 
-    if f is None:
-        return decorator
-    return decorator(f)
+    return decorator if f is None else decorator(f)
 
 
 def _validate_docker_tag(tag: str) -> str:
     from bentoml.exceptions import BentoMLException
 
-    if ":" in tag:
-        name, version = tag.split(":")[:2]
-    else:
-        name, version = tag, None
-
+    name, version = tag.split(":")[:2] if ":" in tag else (tag, None)
     valid_name_pattern = re.compile(
         r"""
         ^(
@@ -420,7 +411,7 @@ class BentoMLCommandGroup(click.Group):
                 continue
             if sub_command in self._commands:
                 aliases = ", ".join(sorted(self._commands[sub_command]))
-                sub_command = "%s (%s)" % (sub_command, aliases)
+                sub_command = f"{sub_command} ({aliases})"
             # this cmd_help is available since click>=7
             # BentoML requires click>=7.
             cmd_help = cmd.get_short_help_str(limit)
@@ -437,10 +428,9 @@ class BentoMLCommandGroup(click.Group):
         except UsageError as e:
             error_msg = str(e)
             original_cmd_name = click.utils.make_str(args[0])
-            matches = difflib.get_close_matches(
+            if matches := difflib.get_close_matches(
                 original_cmd_name, self.list_commands(ctx), 3, 0.5
-            )
-            if matches:
+            ):
                 fmt_matches = "\n    ".join(matches)
                 error_msg += "\n\n"
                 error_msg += f"Did you mean?\n    {fmt_matches}"
@@ -529,7 +519,4 @@ def unparse_click_params(
             )
 
     # We will also convert values if factory is parsed:
-    if factory is not None:
-        return list(map(factory, args))
-
-    return args
+    return list(map(factory, args)) if factory is not None else args

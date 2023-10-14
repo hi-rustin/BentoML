@@ -109,7 +109,7 @@ if __name__ == "__main__":
     actual = "setosa"
     prediction = model_runner.run(test_input)
     predicted = target_names[np.argmax(prediction)]
-    print("\nPREDICTION RESULT: ACTUAL: {}, PREDICTED: {}".format(actual, predicted))
+    print(f"\nPREDICTION RESULT: ACTUAL: {actual}, PREDICTED: {predicted}")
 
     # Option2: save MLflow model and import MLflow pyfunc model to BentoML
     with mlflow.start_run() as run:
@@ -130,6 +130,4 @@ if __name__ == "__main__":
         actual = "setosa"
         prediction = model_runner.predict.run(test_input)
         predicted = target_names[np.argmax(prediction)]
-        print(
-            "\nPREDICTION RESULT: ACTUAL: {}, PREDICTED: {}".format(actual, predicted)
-        )
+        print(f"\nPREDICTION RESULT: ACTUAL: {actual}, PREDICTED: {predicted}")

@@ -94,11 +94,7 @@ class AccessLogMiddleware:
                     await send(message)
                     return
 
-                if client:
-                    address = f"{client[0]}:{client[1]}"
-                else:
-                    address = "_"
-
+                address = f"{client[0]}:{client[1]}" if client else "_"
                 request = [f"scheme={scheme}", f"method={method}", f"path={path}"]
                 if self.has_request_content_type:
                     request.append(f"type={request_content_type.get().decode()}")

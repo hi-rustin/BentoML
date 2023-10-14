@@ -98,9 +98,7 @@ def in_notebook() -> bool:
 
         if "IPKernelApp" not in get_ipython().config:  # pragma: no cover
             return False
-    except ImportError:
-        return False
-    except AttributeError:
+    except (ImportError, AttributeError):
         return False
     return True
 

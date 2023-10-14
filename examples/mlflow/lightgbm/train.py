@@ -87,7 +87,7 @@ def main():
         bento_model = bentoml.mlflow.import_model(
             "lgb_iris", model_uri, signatures={"predict": {"batchable": True}}
         )
-        print("Model imported to BentoML: %s" % bento_model)
+        print(f"Model imported to BentoML: {bento_model}")
 
 
 if __name__ == "__main__":

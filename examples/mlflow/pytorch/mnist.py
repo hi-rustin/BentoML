@@ -77,7 +77,7 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
-enable_cuda_flag = True if args.enable_cuda == "True" else False
+enable_cuda_flag = args.enable_cuda == "True"
 
 args.cuda = enable_cuda_flag and torch.cuda.is_available()
 
@@ -219,7 +219,7 @@ if __name__ == "__main__":
         bento_model_1 = bentoml.pytorch.save_model(
             "pytorch-mnist", model, signatures={"__call__": {"batchable": True}}
         )
-        print("Pytorch Model saved with BentoML: %s" % bento_model_1)
+        print(f"Pytorch Model saved with BentoML: {bento_model_1}")
 
         # make predictions with BentoML runner
         model_runner_1 = bentoml.pytorch.get("pytorch-mnist:latest").to_runner()
@@ -243,7 +243,7 @@ if __name__ == "__main__":
             model_uri,
             signatures={"predict": {"batchable": True}},
         )
-        print("Model imported to BentoML: %s" % bento_model_2)
+        print(f"Model imported to BentoML: {bento_model_2}")
 
         # make predictions with BentoML runner
         model_runner_2 = bentoml.mlflow.get("mlflow_pytorch_mnist:latest").to_runner()

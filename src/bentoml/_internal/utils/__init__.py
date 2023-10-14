@@ -101,9 +101,7 @@ def experimental(
 
         return wrapper
 
-    if f is None:
-        return decorator
-    return decorator(f)
+    return decorator if f is None else decorator(f)
 
 
 def add_experimental_docstring(f: t.Callable[P, t.Any]) -> t.Callable[P, t.Any]:
@@ -243,11 +241,10 @@ def reserve_free_port(
             raise RuntimeError(
                 f"Cannot find free port with prefix {prefix} after {max_retry} retries."
             ) from None
+    elif port:
+        sock.bind((host, port))
     else:
-        if port:
-            sock.bind((host, port))
-        else:
-            sock.bind((host, 0))
+        sock.bind((host, 0))
     try:
         yield sock.getsockname()[1]
     finally:

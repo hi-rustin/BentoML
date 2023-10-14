@@ -308,8 +308,7 @@ class NumpyNdarray(
     def from_spec(cls, spec: dict[str, t.Any]) -> t.Self:
         if "args" not in spec:
             raise InvalidArgument(f"Missing args key in NumpyNdarray spec: {spec}")
-        res = NumpyNdarray(**spec["args"])
-        return res
+        return NumpyNdarray(**spec["args"])
 
     def openapi_schema(self) -> Schema:
         # Note that we are yet provide
@@ -378,7 +377,7 @@ class NumpyNdarray(
                 arr = arr.reshape(self._shape)
             except ValueError as e:
                 logger.debug(
-                    msg + "Failed to reshape: %s",
+                    f"{msg}Failed to reshape: %s",
                     self.__class__.__name__,
                     self._shape,
                     arr.shape,
@@ -420,17 +419,16 @@ class NumpyNdarray(
         """
         obj = self.validate_array(obj)
 
-        if ctx is not None:
-            res = Response(
-                json.dumps(obj.tolist()),
-                media_type=self._mime_type,
-                headers=ctx.response.metadata,  # type: ignore (bad starlette types)
-                status_code=ctx.response.status_code,
-            )
-            set_cookies(res, ctx.response.cookies)
-            return res
-        else:
+        if ctx is None:
             return Response(json.dumps(obj.tolist()), media_type=self._mime_type)
+        res = Response(
+            json.dumps(obj.tolist()),
+            media_type=self._mime_type,
+            headers=ctx.response.metadata,  # type: ignore (bad starlette types)
+            status_code=ctx.response.status_code,
+        )
+        set_cookies(res, ctx.response.cookies)
+        return res
 
     def _from_sample(self, sample: ext.NpNDArray | t.Sequence[t.Any]) -> ext.NpNDArray:
         """
@@ -565,7 +563,7 @@ class NumpyNdarray(
                 fieldpb = [
                     f.name for f, _ in field.ListFields() if f.name.endswith("_values")
                 ]
-                if len(fieldpb) == 0:
+                if not fieldpb:
                     # input message doesn't have any fields.
                     return np.empty(shape=field.shape or 0)
                 elif len(fieldpb) > 1:

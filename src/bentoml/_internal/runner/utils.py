@@ -121,9 +121,7 @@ class Params(t.Generic[T]):
         Return a sample value (the first value of args or kwargs if args is empty)
         of the Params.
         """
-        if self.args:
-            return self.args[0]
-        return next(iter(self.kwargs.values()))
+        return self.args[0] if self.args else next(iter(self.kwargs.values()))
 
 
 PAYLOAD_META_HEADER = "Bento-Payload-Meta"

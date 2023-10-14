@@ -230,7 +230,7 @@ def get_metrics_report(
                 lambda samples: [s for s in samples if "endpoint" in s.labels],
             ]
         else:
-            raise NotImplementedError("Unknown serve kind %s" % serve_kind)
+            raise NotImplementedError(f"Unknown serve kind {serve_kind}")
         # If metrics prefix is BENTOML_, this is legacy metrics
         if metric_name.endswith("_request") and (
             metric_name.startswith("bentoml_") or metric_name.startswith("BENTOML_")

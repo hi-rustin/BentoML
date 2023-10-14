@@ -70,9 +70,7 @@ def parse_dotenv(content: str) -> dict[str, t.Any]:
     env: dict[str, t.Any] = {}
 
     for line in content.splitlines():
-        m1 = line_re.search(line)
-
-        if m1:
+        if m1 := line_re.search(line):
             key, value = m1.groups()
 
             if value is None:
@@ -81,10 +79,7 @@ def parse_dotenv(content: str) -> dict[str, t.Any]:
             # Remove leading/trailing whitespace
             value = value.strip()
 
-            # Remove surrounding quotes
-            m2 = re.match(r'^([\'"])(.*)\1$', value)
-
-            if m2:
+            if m2 := re.match(r'^([\'"])(.*)\1$', value):
                 quotemark, value = m2.groups()
             else:
                 quotemark = None
@@ -103,7 +98,7 @@ def parse_dotenv(content: str) -> dict[str, t.Any]:
                         # Replace it with the value from the environment
                         replace = env.get(parts[-1], os.environ.get(parts[-1], ""))
 
-                    value = value.replace("".join(parts[0:-1]), replace)
+                    value = value.replace("".join(parts[:-1]), replace)
 
             env[key] = value
 

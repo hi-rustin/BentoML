@@ -66,10 +66,7 @@ class Tag:
             self.version = None
 
     def __str__(self):
-        if self.version is None:
-            return self.name
-        else:
-            return f"{self.name}:{self.version}"
+        return self.name if self.version is None else f"{self.name}:{self.version}"
 
     def __repr__(self):
         return f"{self.__class__.__name__}(name={repr(self.name)}, version={repr(self.version)})"
@@ -81,9 +78,7 @@ class Tag:
         if self.name == other.name:
             if other.version is None:
                 return False
-            if self.version is None:
-                return True
-            return self.version < other.version
+            return True if self.version is None else self.version < other.version
         return self.name < other.name
 
     def __hash__(self) -> int:
@@ -91,9 +86,7 @@ class Tag:
 
     @classmethod
     def from_taglike(cls, taglike: t.Union["Tag", str]) -> "Tag":
-        if isinstance(taglike, Tag):
-            return taglike
-        return cls.from_str(taglike)
+        return taglike if isinstance(taglike, Tag) else cls.from_str(taglike)
 
     @classmethod
     def from_str(cls, tag_str: str) -> "Tag":

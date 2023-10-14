@@ -7,10 +7,6 @@ from helpers import load_traced_script
 
 import bentoml
 
-if t.TYPE_CHECKING:
-    pass
-
-
 if __name__ == "__main__":
     import argparse
 

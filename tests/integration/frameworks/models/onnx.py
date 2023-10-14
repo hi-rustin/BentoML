@@ -97,8 +97,7 @@ class PyTorchModel(nn.Module):
         In the forward function we accept a Tensor of input data
         """
         h_relu = self.linear1(x).clamp(min=0)
-        y_pred = self.linear2(h_relu)
-        return y_pred
+        return self.linear2(h_relu)
 
 
 pytorch_input = torch.randn(N, D_in)
@@ -121,8 +120,7 @@ def make_pytorch_onnx_model(tmpdir):
             "output1": {0: "batch_size"},
         },
     )
-    onnx_model = onnx.load(model_path)
-    return onnx_model
+    return onnx.load(model_path)
 
 
 with tempfile.TemporaryDirectory() as tmpdir:

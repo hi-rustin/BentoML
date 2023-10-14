@@ -59,7 +59,7 @@ class MonitorBase(t.Generic[DT]):
         datas: dict[str, collections.deque[DT]] = MON_DATAS_VAR.get()  # type: ignore
         assert datas is not None
 
-        if len(datas) == 0:
+        if not datas:
             logger.warning("No data logged in this record. Will skip output.")
             return
 
@@ -70,7 +70,7 @@ class MonitorBase(t.Generic[DT]):
             self.export_schema(columns)
             MON_COLUMN_VAR.set(None)
 
-        if len(set(len(q) for q in datas.values())) != 1:
+        if len({len(q) for q in datas.values()}) != 1:
             assert ValueError("All columns should have the same length.")
         self.export_data(datas)
 
@@ -100,9 +100,11 @@ class MonitorBase(t.Generic[DT]):
         """
         if name in self.PRESERVED_COLUMNS:
             logger.warning(
-                "Column name %s is reserved, will be renamed to %s", name, name + "_"
+                "Column name %s is reserved, will be renamed to %s",
+                name,
+                f"{name}_",
             )
-            name = name + "_"
+            name += "_"
 
         if role not in BENTOML_MONITOR_ROLES:
             logger.warning(

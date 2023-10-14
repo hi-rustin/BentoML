@@ -82,7 +82,7 @@ async def server_warmup(
     start_time = time.time()
     proxy_handler = urllib.request.ProxyHandler({})
     opener = urllib.request.build_opener(proxy_handler)
-    print("Waiting for host %s to be ready.." % host_url)
+    print(f"Waiting for host {host_url} to be ready..")
     while time.time() - start_time < timeout:
         if grpc:
             from bentoml.testing.grpc import create_channel
@@ -494,7 +494,7 @@ def host_bento(
         else:
             bento = bentoml.get(bento_name)
         print(
-            f"Hosting BentoServer '{bento.tag}' in {deployment_mode} mode at '{project_path}'{' with config file '+config_file if config_file else ''}."
+            f"Hosting BentoServer '{bento.tag}' in {deployment_mode} mode at '{project_path}'{f' with config file {config_file}' if config_file else ''}."
         )
         if deployment_mode == "standalone":
             with run_bento_server_standalone(

@@ -49,12 +49,7 @@ class HTTPClient(Client):
                     break
                 else:
                     time.sleep(check_interval)
-            except (
-                ConnectionError,
-                urllib.error.URLError,
-                socket.timeout,
-                ConnectionRefusedError,
-            ):
+            except (ConnectionError, urllib.error.URLError, socket.timeout):
                 logger.debug("Server is not ready. Retrying...")
                 time.sleep(check_interval)
 
@@ -67,13 +62,7 @@ class HTTPClient(Client):
                 raise TimeoutError(
                     f"Timed out waiting {timeout} seconds for server at '{host}:{port}' to be ready."
                 )
-        except (
-            ConnectionError,
-            urllib.error.URLError,
-            socket.timeout,
-            ConnectionRefusedError,
-            TimeoutError,
-        ) as err:
+        except (ConnectionError, urllib.error.URLError, socket.timeout, TimeoutError) as err:
             logger.error("Timed out while connecting to %s:%s:", host, port)
             logger.error(err)
             raise
@@ -88,13 +77,13 @@ class HTTPClient(Client):
 
     @classmethod
     def from_url(cls, server_url: str, **kwargs: t.Any) -> HTTPClient:
-        server_url = server_url if "://" in server_url else "http://" + server_url
+        server_url = server_url if "://" in server_url else f"http://{server_url}"
         url_parts = urlparse(server_url)
 
         # TODO: SSL support
         conn = HTTPConnection(url_parts.netloc)
         conn.set_debuglevel(logging.DEBUG if get_debug_mode() else 0)
-        conn.request("GET", url_parts.path + "/docs.json")
+        conn.request("GET", f"{url_parts.path}/docs.json")
         resp = conn.getresponse()
         if resp.status != 200:
             raise RemoteException(
@@ -162,11 +151,7 @@ class HTTPClient(Client):
         req_body = fake_resp.body
 
         async with aiohttp.ClientSession(self.server_url) as sess:
-            async with sess.post(
-                "/" + api.route if not api.route.startswith("/") else api.route,
-                data=req_body,
-                headers={"content-type": fake_resp.headers["content-type"]},
-            ) as resp:
+            async with sess.post(f"/{api.route}" if not api.route.startswith("/") else api.route, data=req_body, headers={"content-type": fake_resp.headers["content-type"]}) as resp:
                 if resp.status != 200:
                     raise BentoMLException(
                         f"Error making request: {resp.status}: {str(await resp.read())}"

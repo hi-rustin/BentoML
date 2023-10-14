@@ -45,14 +45,16 @@ def create_bento_servicer(service: Service) -> services.BentoServiceServicer:
     Main inference entrypoint will be invoked via /bentoml.grpc.<version>.BentoService/Call
     """
 
+
+
     class BentoServiceImpl(services.BentoServiceServicer):
         """An asyncio implementation of BentoService servicer."""
 
         async def Call(  # type: ignore (no async types) # pylint: disable=invalid-overridden-method
-            self,
-            request: pb.Request,
-            context: BentoServicerContext,
-        ) -> pb.Response | None:
+                    self,
+                    request: pb.Request,
+                    context: BentoServicerContext,
+                ) -> pb.Response | None:
             if request.api_name not in service.apis:
                 raise InvalidArgument(
                     f"given 'api_name' is not defined in {service.name}",
@@ -73,15 +75,15 @@ def create_bento_servicer(service: Service) -> services.BentoServiceServicer:
                 )
                 input_data = await api.input.from_proto(input_proto)
                 if is_async_callable(api.func):
-                    if api.multi_input:
-                        output = await api.func(**input_data)
-                    else:
-                        output = await api.func(input_data)
+                    output = (
+                        await api.func(**input_data)
+                        if api.multi_input
+                        else await api.func(input_data)
+                    )
+                elif api.multi_input:
+                    output = await anyio.to_thread.run_sync(api.func, **input_data)
                 else:
-                    if api.multi_input:
-                        output = await anyio.to_thread.run_sync(api.func, **input_data)
-                    else:
-                        output = await anyio.to_thread.run_sync(api.func, input_data)
+                    output = await anyio.to_thread.run_sync(api.func, input_data)
 
                 res = await api.output.to_proto(output)
                 # TODO(aarnphm): support multiple proto fields
@@ -93,10 +95,7 @@ def create_bento_servicer(service: Service) -> services.BentoServiceServicer:
 
                     signature = inspect.signature(api.output.to_proto)
                     param = next(iter(signature.parameters.values()))
-                    ann = ""
-                    if param is not inspect.Parameter.empty:
-                        ann = param.annotation
-
+                    ann = param.annotation if param is not inspect.Parameter.empty else ""
                     # more descriptive errors if output is available
                     logger.error(
                         "Function '%s' has 'input=%s,output=%s' as IO descriptor, and returns 'result=%s', while expected return type is '%s'",
@@ -107,7 +106,7 @@ def create_bento_servicer(service: Service) -> services.BentoServiceServicer:
                         ann,
                     )
                 await context.abort(code=grpc_status_code(e), details=e.message)
-            except (RuntimeError, TypeError, NotImplementedError):
+            except (RuntimeError, TypeError):
                 log_exception(request, sys.exc_info())
                 await context.abort(
                     code=grpc.StatusCode.INTERNAL,
@@ -143,6 +142,7 @@ def create_bento_servicer(service: Service) -> services.BentoServiceServicer:
                     for api in service.apis.values()
                 ],
             )
+
 
     return BentoServiceImpl()
 

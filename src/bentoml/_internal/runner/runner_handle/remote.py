@@ -171,16 +171,15 @@ class RemoteRunnerClient(RunnerHandle):
 
         inp_batch_dim = __bentoml_method.config.batch_dim[0]
 
+        total_args_num = len(args) + len(kwargs)
         headers = {
             "Bento-Name": component_context.bento_name,
             "Bento-Version": component_context.bento_version,
             "Runner-Name": self._runner.name,
             "Yatai-Bento-Deployment-Name": component_context.yatai_bento_deployment_name,
             "Yatai-Bento-Deployment-Namespace": component_context.yatai_bento_deployment_namespace,
+            "Args-Number": str(total_args_num),
         }
-        total_args_num = len(args) + len(kwargs)
-        headers["Args-Number"] = str(total_args_num)
-
         if total_args_num == 1:
             # FIXME: also considering kwargs
             if len(kwargs) == 1:
@@ -202,8 +201,8 @@ class RemoteRunnerClient(RunnerHandle):
                 functools.partial(AutoContainer.to_payload, batch_dim=inp_batch_dim)
             )
 
-            if __bentoml_method.config.batchable:
-                if not payload_params.map(lambda i: i.batch_size).all_equal():
+            if not payload_params.map(lambda i: i.batch_size).all_equal():
+                if __bentoml_method.config.batchable:
                     raise ValueError(
                         "All batchable arguments must have the same batch size."
                     )
@@ -220,21 +219,23 @@ class RemoteRunnerClient(RunnerHandle):
                 ) as resp:
                     body = await resp.read()
             except aiohttp.ClientOSError as e:
-                if os.getenv("BENTOML_RETRY_RUNNER_REQUESTS", "").lower() == "true":
-                    try:
-                        # most likely the TCP connection has been closed; retry after reconnecting
-                        await self._reset_client()
-                        async with self._client.post(
-                            f"{self._addr}/{path}",
-                            data=data,
-                            headers=headers,
-                        ) as resp:
-                            body = await resp.read()
-                    except aiohttp.ClientOSError:
-                        raise RemoteException("Failed to connect to runner server.")
-                else:
+                if (
+                    os.getenv("BENTOML_RETRY_RUNNER_REQUESTS", "").lower()
+                    != "true"
+                ):
                     raise RemoteException("Failed to connect to runner server.") from e
 
+                try:
+                    # most likely the TCP connection has been closed; retry after reconnecting
+                    await self._reset_client()
+                    async with self._client.post(
+                        f"{self._addr}/{path}",
+                        data=data,
+                        headers=headers,
+                    ) as resp:
+                        body = await resp.read()
+                except aiohttp.ClientOSError:
+                    raise RemoteException("Failed to connect to runner server.")
         try:
             content_type = resp.headers["Content-Type"]
             assert content_type.lower().startswith("application/vnd.bentoml.")
@@ -443,11 +444,11 @@ class TritonRunnerHandle(RunnerHandle):
     ) -> tritongrpcclient.InferResult | tritonhttpclient.InferResult:
         from ..container import AutoContainer
 
-        assert (len(args) == 0) ^ (
-            len(kwargs) == 0
+        assert (not args) ^ (
+            not kwargs
         ), f"Inputs for model '{__bentoml_method.name}' can be given either as positional (args) or keyword arguments (kwargs), but not both. See https://github.com/triton-inference-server/server/blob/main/docs/user_guide/model_configuration.md#model-configuration"
 
-        pass_args = args if len(args) > 0 else kwargs
+        pass_args = args if args else kwargs
 
         # return metadata of a given model
         if not self._use_http_client:
@@ -493,7 +494,7 @@ class TritonRunnerHandle(RunnerHandle):
         )
         return await self.client.infer(
             model_name=__bentoml_method.name,
-            inputs=list(params.args) if len(args) > 0 else list(params.kwargs.values()),
+            inputs=list(params.args) if args else list(params.kwargs.values()),
             outputs=outputs,
         )
 

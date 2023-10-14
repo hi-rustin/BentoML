@@ -142,7 +142,7 @@ def _gen_input_casting_func_for_sequence(
     elem_casting_func = _gen_input_casting_func(seq_elem_sig)
 
     def _mapping(item: ONNXArgSequenceType) -> list[t.Any]:
-        new_item = list(elem_casting_func(elem) for elem in item)
+        new_item = [elem_casting_func(elem) for elem in item]
         return new_item
 
     return _mapping

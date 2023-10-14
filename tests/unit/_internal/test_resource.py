@@ -15,7 +15,7 @@ from bentoml._internal.resource import NvidiaGpuResource
 class DummyResource(Resource[str], resource_id="dummy"):
     @classmethod
     def from_spec(cls, spec: str) -> str:
-        return spec + "dummy"
+        return f"{spec}dummy"
 
     @classmethod
     def validate(cls, val: str):

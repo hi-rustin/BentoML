@@ -61,7 +61,7 @@ def get(tag_like: str | Tag) -> bentoml.Model:
     return model
 
 
-def load_model(bento_model: str | Tag | bentoml.Model) -> lgb.basic.Booster:  # type: ignore (incomplete ligthgbm type stubs)
+def load_model(bento_model: str | Tag | bentoml.Model) -> lgb.basic.Booster:    # type: ignore (incomplete ligthgbm type stubs)
     """
     Load the LightGBM model with the given tag from the local BentoML model store.
 
@@ -89,8 +89,7 @@ def load_model(bento_model: str | Tag | bentoml.Model) -> lgb.basic.Booster:  # 
         )
 
     model_file = bento_model.path_of(MODEL_FILENAME)
-    booster = lgb.basic.Booster(model_file=model_file)  # type: ignore (incomplete ligthgbm type stubs)
-    return booster  # type: ignore
+    return lgb.basic.Booster(model_file=model_file)
 
 
 def save_model(

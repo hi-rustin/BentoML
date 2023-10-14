@@ -90,8 +90,7 @@ class JaxArrayContainer(DataContainer[jax.Array, jax.Array]):
         batch_dim: int = 0,
     ) -> t.List[Payload]:
         batches = cls.batch_to_batches(batch, indices, batch_dim)
-        payloads = [cls.to_payload(subbatch, batch_dim) for subbatch in batches]
-        return payloads
+        return [cls.to_payload(subbatch, batch_dim) for subbatch in batches]
 
     @classmethod
     @inject

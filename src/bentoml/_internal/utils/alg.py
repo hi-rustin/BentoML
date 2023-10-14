@@ -26,14 +26,10 @@ class FixedBucket(t.Generic[T]):
 
     @property
     def data(self):
-        if not self._flag_full:
-            return self._data[: self._cur]
-        return self._data
+        return self._data[: self._cur] if not self._flag_full else self._data
 
     def __len__(self):
-        if not self._flag_full:
-            return self._cur
-        return self._size
+        return self._cur if not self._flag_full else self._size
 
     def __getitem__(self, sl: slice):
         if not self._flag_full:

@@ -42,18 +42,16 @@ class AsyncContextInterceptor(aio.ServerInterceptor):
         def wrapper(behaviour: AsyncHandlerMethod[Response]):
             @functools.wraps(behaviour)
             async def new_behaviour(
-                request: Request, context: BentoServicerContext
-            ) -> Response | t.Awaitable[Response]:
+                        request: Request, context: BentoServicerContext
+                    ) -> Response | t.Awaitable[Response]:
                 self._record.update(
                     {f"{self.context.usage}:{self.context.accuracy_score}"}
                 )
                 resp = await behaviour(request, context)
                 context.set_trailing_metadata(
                     tuple(
-                        [
-                            (k, str(v).encode("utf-8"))
-                            for k, v in dataclasses.asdict(self.context).items()
-                        ]
+                        (k, str(v).encode("utf-8"))
+                        for k, v in dataclasses.asdict(self.context).items()
                     )
                 )
                 return resp

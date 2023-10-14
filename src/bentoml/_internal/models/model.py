@@ -380,14 +380,13 @@ class Model(StoreItem):
         return self._model
 
     def with_options(self, **kwargs: t.Any) -> Model:
-        res = Model(
+        return Model(
             self._tag,
             self._fs,
             self.info.with_options(**kwargs),
             self._custom_objects,
             _internal=True,
         )
-        return res
 
 
 class ModelStore(Store[Model]):

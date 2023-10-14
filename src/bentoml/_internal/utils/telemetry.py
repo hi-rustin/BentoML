@@ -46,9 +46,6 @@ class TraceIdRatioBasedAlwaysRecording(TraceIdRatioBased):
         decision = Decision.RECORD_ONLY
         if trace_id & self.TRACE_ID_LIMIT < self.bound:
             decision = Decision.RECORD_AND_SAMPLE
-        if decision is Decision.RECORD_ONLY:
-            pass
-            # attributes = None
         return SamplingResult(
             decision,
             attributes,

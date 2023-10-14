@@ -240,7 +240,7 @@ def migration(*, override_config: dict[str, t.Any]):
 
     # 4. if ssl is present, in version 2 we introduce a api_server.ssl.enabled field to determine
     # whether user want to enable SSL.
-    if len([f for f in override_config if f.startswith("api_server.ssl")]) != 0:
+    if [f for f in override_config if f.startswith("api_server.ssl")]:
         override_config["api_server.ssl.enabled"] = True
 
     # 5. migrate all tracing fields to api_server.tracing
@@ -269,16 +269,11 @@ def migration(*, override_config: dict[str, t.Any]):
         replace_with="tracing.jaeger.thrift.agent_port",
     )
     # we also need to choose which protocol to use for jaeger.
-    if (
-        len(
-            [
-                f
-                for f in override_config
-                if f.startswith("api_server.tracing.jaeger.thrift")
-            ]
-        )
-        != 0
-    ):
+    if [
+        f
+        for f in override_config
+        if f.startswith("api_server.tracing.jaeger.thrift")
+    ]:
         override_config["tracing.jaeger.protocol"] = "thrift"
     # 6. Last but not least, moving logging.formatting.* -> api_server.logging.access.format.*
     for f in ["trace_id", "span_id"]:
@@ -297,11 +292,10 @@ def migration(*, override_config: dict[str, t.Any]):
     for key in list(override_config):
         if key.startswith("runners."):
             runner_name = key.split(".")[1]
-            if any(key.schema == runner_name for key in _RUNNER_CONFIG):
-                continue
-            rename_fields(
-                override_config,
-                current=f"runners.{runner_name}.timeout",
-                replace_with=f"runners.{runner_name}.traffic.timeout",
-            )
+            if all(key.schema != runner_name for key in _RUNNER_CONFIG):
+                rename_fields(
+                    override_config,
+                    current=f"runners.{runner_name}.timeout",
+                    replace_with=f"runners.{runner_name}.traffic.timeout",
+                )
     return unflatten(override_config)
