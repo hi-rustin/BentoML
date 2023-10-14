@@ -54,20 +54,17 @@ def ensure_prometheus_dir(
     try:
         path = Path(directory)
         if path.exists():
-            if not path.is_dir() or any(path.iterdir()):
-                if clean:
-                    shutil.rmtree(str(path))
-                    path.mkdir()
-                    return str(path.absolute())
-                else:
-                    raise RuntimeError(
-                        f"Prometheus multiproc directory {path} is not empty."
-                    )
-            else:
+            if path.is_dir() and not any(path.iterdir()):
                 return str(path.absolute())
+            if not clean:
+                raise RuntimeError(
+                    f"Prometheus multiproc directory {path} is not empty."
+                )
+            shutil.rmtree(str(path))
+            path.mkdir()
         else:
             path.mkdir(parents=True)
-            return str(path.absolute())
+        return str(path.absolute())
     except shutil.Error as e:
         if not use_alternative:
             raise RuntimeError(
@@ -405,7 +402,7 @@ def serve_http_production(
             # reserve one more to avoid conflicts
             port_stack.enter_context(reserve_free_port())
     else:
-        raise NotImplementedError("Unsupported platform: {}".format(sys.platform))
+        raise NotImplementedError(f"Unsupported platform: {sys.platform}")
 
     logger.debug("Runner map: %s", runner_bind_map)
 
@@ -448,7 +445,7 @@ def serve_http_production(
     if development_mode:
         api_server_args.append("--development-mode")
 
-    close_child_stdin = False if development_mode else True
+    close_child_stdin = not development_mode
 
     loop = asyncio.get_event_loop()
     loop.run_until_complete(on_service_deployment(svc))
@@ -488,13 +485,13 @@ def serve_http_production(
     arbiter_kwargs["plugins"] = plugins
 
     if development_mode:
-        arbiter_kwargs["debug"] = True if sys.platform != "win32" else False
+        arbiter_kwargs["debug"] = sys.platform != "win32"
         arbiter_kwargs["loggerconfig"] = SERVER_LOGGING_CONFIG
         arbiter_kwargs["loglevel"] = "WARNING"
 
     arbiter = create_standalone_arbiter(**arbiter_kwargs)
 
-    production = False if development_mode else True
+    production = not development_mode
 
     with track_serve(svc, production=production):
         try:

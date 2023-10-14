@@ -82,11 +82,9 @@ def generate_service_components(svc: Service) -> Components:
     components: dict[str, t.Any] = {}
     for api in svc.apis.values():
         api_components = {}
-        input_components = api.input.openapi_components()
-        if input_components:
+        if input_components := api.input.openapi_components():
             merger.merge(api_components, input_components)
-        output_components = api.output.openapi_components()
-        if output_components:
+        if output_components := api.output.openapi_components():
             merger.merge(api_components, output_components)
 
         merger.merge(components, api_components)

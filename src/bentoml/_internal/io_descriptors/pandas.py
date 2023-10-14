@@ -84,48 +84,47 @@ def _dataframe_openapi_schema(
     dtype: bool | ext.PdDTypeArg | None,
     orient: ext.DataFrameOrient = None,
 ) -> Schema:  # pragma: no cover
-    if isinstance(dtype, dict):
-        if orient == "records":
-            return Schema(
-                type="array",
-                items=Schema(
-                    type="object",
-                    properties={
-                        k: Schema(type=_openapi_types(v)) for k, v in dtype.items()
-                    },
-                ),
-            )
-        if orient == "index":
-            return Schema(
-                type="object",
-                additionalProperties=Schema(
-                    type="object",
-                    properties={
-                        k: Schema(type=_openapi_types(v)) for k, v in dtype.items()
-                    },
-                ),
-            )
-        if orient == "columns":
-            return Schema(
+    if not isinstance(dtype, dict):
+        return Schema(type="object")
+    if orient == "records":
+        return Schema(
+            type="array",
+            items=Schema(
                 type="object",
                 properties={
-                    k: Schema(
-                        type="object",
-                        additionalProperties=Schema(type=_openapi_types(v)),
-                    )
-                    for k, v in dtype.items()
+                    k: Schema(type=_openapi_types(v)) for k, v in dtype.items()
                 },
-            )
-
+            ),
+        )
+    if orient == "index":
+        return Schema(
+            type="object",
+            additionalProperties=Schema(
+                type="object",
+                properties={
+                    k: Schema(type=_openapi_types(v)) for k, v in dtype.items()
+                },
+            ),
+        )
+    if orient == "columns":
         return Schema(
             type="object",
             properties={
-                k: Schema(type="array", items=Schema(type=_openapi_types(v)))
+                k: Schema(
+                    type="object",
+                    additionalProperties=Schema(type=_openapi_types(v)),
+                )
                 for k, v in dtype.items()
             },
         )
-    else:
-        return Schema(type="object")
+
+    return Schema(
+        type="object",
+        properties={
+            k: Schema(type="array", items=Schema(type=_openapi_types(v)))
+            for k, v in dtype.items()
+        },
+    )
 
 
 def _series_openapi_schema(
@@ -470,8 +469,7 @@ class PandasDataFrame(
     def from_spec(cls, spec: dict[str, t.Any]) -> t.Self:
         if "args" not in spec:
             raise InvalidArgument(f"Missing args key in PandasDataFrame spec: {spec}")
-        res = PandasDataFrame(**spec["args"])
-        return res
+        return PandasDataFrame(**spec["args"])
 
     def input_type(self) -> LazyType[ext.PdDataFrame]:
         return LazyType("pandas", "DataFrame")
@@ -581,17 +579,16 @@ class PandasDataFrame(
                 f"Unknown serialization format ({serialization_format})."
             ) from None
 
-        if ctx is not None:
-            res = Response(
-                resp,
-                media_type=serialization_format.mime_type,
-                headers=ctx.response.headers,  # type: ignore (bad starlette types)
-                status_code=ctx.response.status_code,
-            )
-            set_cookies(res, ctx.response.cookies)
-            return res
-        else:
+        if ctx is None:
             return Response(resp, media_type=serialization_format.mime_type)
+        res = Response(
+            resp,
+            media_type=serialization_format.mime_type,
+            headers=ctx.response.headers,  # type: ignore (bad starlette types)
+            status_code=ctx.response.status_code,
+        )
+        set_cookies(res, ctx.response.cookies)
+        return res
 
     def validate_dataframe(
         self, dataframe: ext.PdDataFrame, exception_cls: t.Type[Exception] = BadInput
@@ -625,8 +622,8 @@ class PandasDataFrame(
         # TODO: convert from wide to long format (melt())
         if self._shape is not None and self._shape != dataframe.shape:
             msg = f'{self.__class__.__name__}: Expecting DataFrame of shape "{self._shape}", but "{dataframe.shape}" was received.'
-            if self._enforce_shape and not all(
-                left == right
+            if self._enforce_shape and any(
+                left != right
                 for left, right in zip(self._shape, dataframe.shape)
                 if left != -1 and right != -1
             ):
@@ -646,40 +643,38 @@ class PandasDataFrame(
             a ``pandas.DataFrame`` object. This can then be used
              inside users defined logics.
         """
-        # TODO: support different serialization format
         if isinstance(field, bytes):
             # TODO: handle serialized_bytes for dataframe
             raise NotImplementedError(
                 'Currently not yet implemented. Use "dataframe" instead.'
             )
-        else:
-            # note that there is a current bug where we don't check for
-            # dtype of given fields per Series to match with types of a given
-            # columns, hence, this would result in a wrong DataFrame that is not
-            # expected by our users.
-            # columns orient: { column_name : {index : columns.series._value}}
-            if self._orient != "columns":
+        # note that there is a current bug where we don't check for
+        # dtype of given fields per Series to match with types of a given
+        # columns, hence, this would result in a wrong DataFrame that is not
+        # expected by our users.
+        # columns orient: { column_name : {index : columns.series._value}}
+        if self._orient != "columns":
+            raise BadInput(
+                f"'dataframe' field currently only supports 'columns' orient. Make sure to set 'orient=columns' in {self.__class__.__name__}."
+            ) from None
+        data: list[t.Any] = []
+
+        def process_columns_contents(content: pb.Series) -> dict[str, t.Any]:
+            # To be use inside a ThreadPoolExecutor to handle
+            # large tabular data
+            if len(content.ListFields()) != 1:
                 raise BadInput(
-                    f"'dataframe' field currently only supports 'columns' orient. Make sure to set 'orient=columns' in {self.__class__.__name__}."
+                    f"Array contents can only be one of given values key. Use one of '{list(map(lambda f: f[0].name,content.ListFields()))}' instead."
                 ) from None
-            data: list[t.Any] = []
+            return {str(i): c for i, c in enumerate(content.ListFields()[0][1])}
 
-            def process_columns_contents(content: pb.Series) -> dict[str, t.Any]:
-                # To be use inside a ThreadPoolExecutor to handle
-                # large tabular data
-                if len(content.ListFields()) != 1:
-                    raise BadInput(
-                        f"Array contents can only be one of given values key. Use one of '{list(map(lambda f: f[0].name,content.ListFields()))}' instead."
-                    ) from None
-                return {str(i): c for i, c in enumerate(content.ListFields()[0][1])}
-
-            with ThreadPoolExecutor(max_workers=10) as executor:
-                futures = executor.map(process_columns_contents, field.columns)
-                data.extend([i for i in list(futures)])
-            dataframe = pd.DataFrame(
-                dict(zip(field.column_names, data)),
-                columns=t.cast(t.List[str], field.column_names),
-            )
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            futures = executor.map(process_columns_contents, field.columns)
+            data.extend(list(list(futures)))
+        dataframe = pd.DataFrame(
+            dict(zip(field.column_names, data)),
+            columns=t.cast(t.List[str], field.column_names),
+        )
         return self.validate_dataframe(dataframe)
 
     @t.overload
@@ -718,13 +713,12 @@ class PandasDataFrame(
         # FIXME(aarnphm): validate and handle mix columns dtype
         # currently we don't support ExtensionDtype
         columns_name: list[str] = list(map(str, obj.columns))
-        not_supported: list[ext.PdDType] = list(
+        if not_supported := list(
             filter(
                 lambda x: x not in mapping,
                 map(lambda x: t.cast("ext.PdSeries", obj[x]).dtype, columns_name),
             )
-        )
-        if len(not_supported) > 0:
+        ):
             raise UnprocessableEntity(
                 f'dtype in column "{obj.columns}" is not currently supported.'
             ) from None
@@ -982,8 +976,7 @@ class PandasSeries(
     def from_spec(cls, spec: dict[str, t.Any]) -> t.Self:
         if "args" not in spec:
             raise InvalidArgument(f"Missing args key in PandasSeries spec: {spec}")
-        res = PandasSeries(**spec["args"])
-        return res
+        return PandasSeries(**spec["args"])
 
     def openapi_schema(self) -> Schema:
         return _series_openapi_schema(self._dtype, self._orient)
@@ -1047,19 +1040,18 @@ class PandasSeries(
             HTTP Response of type ``starlette.responses.Response``. This can be accessed via cURL or any external web traffic.
         """
         obj = self.validate_series(obj)
-        if ctx is not None:
-            res = Response(
-                obj.to_json(orient=self._orient),
-                media_type=self._mime_type,
-                headers=ctx.response.headers,  # type: ignore (bad starlette types)
-                status_code=ctx.response.status_code,
-            )
-            set_cookies(res, ctx.response.cookies)
-            return res
-        else:
+        if ctx is None:
             return Response(
                 obj.to_json(orient=self._orient), media_type=self._mime_type
             )
+        res = Response(
+            obj.to_json(orient=self._orient),
+            media_type=self._mime_type,
+            headers=ctx.response.headers,  # type: ignore (bad starlette types)
+            status_code=ctx.response.status_code,
+        )
+        set_cookies(res, ctx.response.cookies)
+        return res
 
     def validate_series(
         self, series: ext.PdSeries, exception_cls: t.Type[Exception] = BadInput
@@ -1072,8 +1064,8 @@ class PandasSeries(
         # TODO: convert from wide to long format (melt())
         if self._shape is not None and self._shape != series.shape:
             msg = f"{self.__class__.__name__}: Expecting Series of shape '{self._shape}', but '{series.shape}' was received."
-            if self._enforce_shape and not all(
-                left == right
+            if self._enforce_shape and any(
+                left != right
                 for left, right in zip(self._shape, series.shape)
                 if left != -1 and right != -1
             ):
@@ -1111,31 +1103,30 @@ class PandasSeries(
             raise NotImplementedError(
                 'Currently not yet implemented. Use "series" instead.'
             )
+        # The behaviour of `from_proto` will mimic the behaviour of `NumpyNdArray.from_proto`,
+        # where we will respect self._dtype if set.
+        # since self._dtype uses numpy dtype, we will use some of numpy logics here.
+        from .numpy import fieldpb_to_npdtype_map
+        from .numpy import npdtype_to_fieldpb_map
+
+        if self._dtype is None:
+            fieldpb = [
+                f.name for f, _ in field.ListFields() if f.name.endswith("_values")
+            ]
+            if not fieldpb:
+                # input message doesn't have any fields.
+                return pd.Series()
+            elif len(fieldpb) > 1:
+                # when there are more than two values provided in the proto.
+                raise InvalidArgument(
+                    f"Array contents can only be one of given values key. Use one of '{fieldpb}' instead.",
+                ) from None
+            dtype = fieldpb_to_npdtype_map()[fieldpb[0]]
+            data = getattr(field, fieldpb[0])
+
         else:
-            # The behaviour of `from_proto` will mimic the behaviour of `NumpyNdArray.from_proto`,
-            # where we will respect self._dtype if set.
-            # since self._dtype uses numpy dtype, we will use some of numpy logics here.
-            from .numpy import fieldpb_to_npdtype_map
-            from .numpy import npdtype_to_fieldpb_map
-
-            if self._dtype is not None:
-                dtype = self._dtype
-                data = getattr(field, npdtype_to_fieldpb_map()[self._dtype])
-            else:
-                fieldpb = [
-                    f.name for f, _ in field.ListFields() if f.name.endswith("_values")
-                ]
-                if len(fieldpb) == 0:
-                    # input message doesn't have any fields.
-                    return pd.Series()
-                elif len(fieldpb) > 1:
-                    # when there are more than two values provided in the proto.
-                    raise InvalidArgument(
-                        f"Array contents can only be one of given values key. Use one of '{fieldpb}' instead.",
-                    ) from None
-                dtype = fieldpb_to_npdtype_map()[fieldpb[0]]
-                data = getattr(field, fieldpb[0])
-
+            dtype = self._dtype
+            data = getattr(field, npdtype_to_fieldpb_map()[self._dtype])
         try:
             series = pd.Series(data, dtype=dtype)
         except ValueError:

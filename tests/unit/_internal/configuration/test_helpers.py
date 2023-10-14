@@ -57,7 +57,7 @@ def test_rename_fields_remove_only():
     rename_fields(d, "a", remove_only=True)
     assert "a" not in d
     rename_fields(d, "b", remove_only=True)
-    assert len(d) == 0
+    assert not d
 
 
 def test_rename_fields_check_log(caplog: LogCaptureFixture):
@@ -76,7 +76,7 @@ def test_rename_fields_check_log_remove_only(caplog: LogCaptureFixture):
     with caplog.at_level(logging.WARNING):
         rename_fields(d, "api_server.port", remove_only=True)
     assert "Field 'api_server.port' is deprecated and will be removed." in caplog.text
-    assert len(d) == 0
+    assert not d
 
 
 def test_rename_fields_exception():

@@ -65,19 +65,20 @@ def _format_env(env: list[str]) -> list[str]:
 
 
 def format_md(env: list[str], info_dict: dict[str, str | list[str]]) -> list[str]:
-    out: list[str] = []
-    out.append(
-        """\
+    out: list[str] = [
+        (
+            """\
 #### Environment variable
 
 ```bash
 {env}
 ```
 """.format(
-            env="\n".join(_format_env(env))
-        )
-    )
-    out.append("#### System information\n")
+                env="\n".join(_format_env(env))
+            )
+        ),
+        "#### System information\n",
+    ]
     for key, value in info_dict.items():
         if isinstance(value, list):
             out.append(_format_dropdown(key, value))

@@ -96,15 +96,13 @@ async def test_cors(host: str, server_config_file: str) -> None:
         headers={"Content-Type": "application/json", "Origin": ORIGIN},
         data='"hi"',
     )
+    assert status == 200
+    assert body == b'"hi"'
     if fname == "cors_enabled.yml":
-        assert status == 200
-        assert body == b'"hi"'
         assert headers["Access-Control-Allow-Origin"] in ("*", ORIGIN)
         assert "Content-Length" in headers.get("Access-Control-Expose-Headers", [])
         assert "Server" not in headers.get("Access-Control-Expect-Headers", [])
     else:
-        assert status == 200
-        assert body == b'"hi"'
         assert headers.get("Access-Control-Allow-Origin") not in ("*", ORIGIN)
         assert "Content-Length" not in headers.get("Access-Control-Expose-Headers", [])
 

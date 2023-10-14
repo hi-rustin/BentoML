@@ -220,11 +220,7 @@ def get_output_signatures_v2(
             for s in get_output_signatures_v2(conc)
         ]
 
-    if hasattr(func, "structured_outputs"):
-        # for concrete_functions
-        return [func.structured_outputs]
-
-    return []
+    return [func.structured_outputs] if hasattr(func, "structured_outputs") else []
 
 
 def get_input_signatures(
@@ -235,13 +231,12 @@ def get_input_signatures(
         input_spec: "tf_ext.TensorSignature" = getattr(func_spec, "input_signature")
         if input_spec is not None:
             return ((input_spec, {}),)
-        else:
-            concrete_func: t.List["tf_ext.ConcreteFunction"] = getattr(
-                func, "concrete_functions"
-            )
-            return tuple(
-                s for conc in concrete_func for s in get_input_signatures(conc)
-            )
+        concrete_func: t.List["tf_ext.ConcreteFunction"] = getattr(
+            func, "concrete_functions"
+        )
+        return tuple(
+            s for conc in concrete_func for s in get_input_signatures(conc)
+        )
     else:
         sis: "tf_ext.InputSignature" = getattr(func, "structured_input_signature")
         if sis is not None:
@@ -293,7 +288,7 @@ def get_arg_names(func: "tf_ext.DecoratedFunction") -> t.Optional[t.List[str]]:
         return getattr(func_spec, "arg_names")
     if hasattr(func, "structured_input_signature"):  # for ConcreteFunction
         return getattr(func, "_arg_keywords")
-    return list()
+    return []
 
 
 def get_restorable_functions(
@@ -322,11 +317,7 @@ def get_serving_default_function(m: "tf_ext.Trackable") -> "tf_ext.ConcreteFunct
 
 
 def _pretty_format_function_call(base: str, name: str, arg_names: t.Tuple[t.Any]):
-    if arg_names:
-        part_sigs = ", ".join(f"{k}" for k in arg_names)
-    else:
-        part_sigs = ""
-
+    part_sigs = ", ".join(f"{k}" for k in arg_names) if arg_names else ""
     if name == "__call__":
         return f"{base}({part_sigs})"
     return f"{base}.{name}({part_sigs})"
@@ -378,8 +369,7 @@ def pretty_format_restored_model(model: "tf_ext.AutoTrackable") -> str:
         part_functions += "\n"
 
     if get_tf_version().startswith("1"):
-        serving_default = get_serving_default_function(model)
-        if serving_default:
+        if serving_default := get_serving_default_function(model):
             part_functions += pretty_format_function(
                 serving_default, "model", "signatures['serving_default']"
             )
@@ -435,7 +425,7 @@ class tf_function_wrapper:  # pragma: no cover
         self.origin_func = origin_func
         self.arg_names = arg_names
         self.arg_specs = arg_specs
-        self.kwarg_specs = {k: v for k, v in zip(arg_names or [], arg_specs or [])}
+        self.kwarg_specs = dict(zip(arg_names or [], arg_specs or []))
         self.kwarg_specs.update(kwarg_specs or {})
 
     def __call__(
@@ -449,8 +439,7 @@ class tf_function_wrapper:  # pragma: no cover
                 raise TypeError(f"Function got an unexpected keyword argument {k}")
 
         arg_keys = {k for k, _ in zip(self.arg_names, args)}  # type: ignore[arg-type]
-        _ambiguous_keys = arg_keys & set(kwargs)  # type: t.Set[str]
-        if _ambiguous_keys:
+        if _ambiguous_keys := arg_keys & set(kwargs):
             raise TypeError(f"got two values for arguments '{_ambiguous_keys}'")
 
         # INFO:

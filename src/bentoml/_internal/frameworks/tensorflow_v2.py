@@ -95,14 +95,11 @@ def load_model(
 
     if "GPU" in device_name:
         physical_devices = tf.config.list_physical_devices("GPU")
-        try:
+        with contextlib.suppress(RuntimeError):
             # an optimization for GPU memory growth. But it will raise an error if any
             # tensorflow session is already created. That happens when users test runners
             # in a notebook or Python interactive shell. Thus we just ignore the error.
             tf.config.experimental.set_memory_growth(physical_devices[0], True)
-        except RuntimeError:
-            pass
-
     with tf.device(device_name):  # type: ignore (tf.device is a context manager)
         tf_model: tf_ext.AutoTrackable = tf.saved_model.load(bento_model.path)
         return tf_model
@@ -181,8 +178,7 @@ def save_model(
     )
 
     if signatures is None:
-        restorable_functions = get_restorable_functions(model)
-        if restorable_functions:
+        if restorable_functions := get_restorable_functions(model):
             signatures = {
                 k: {
                     "batchable": False,
@@ -228,6 +224,8 @@ def get_runnable(
 
     partial_kwargs: t.Dict[str, t.Any] = bento_model.info.options.partial_kwargs
 
+
+
     class TensorflowRunnable(Runnable):
         SUPPORTED_RESOURCES = ("nvidia.com/gpu", "cpu")
         SUPPORTS_CPU_MULTI_THREADING = True
@@ -248,10 +246,9 @@ def get_runnable(
             self.session_stack.enter_context(tf.device(self.device_name))
 
         def __del__(self):
-            try:
+            with contextlib.suppress(RuntimeError):
                 self.session_stack.close()
-            except RuntimeError:
-                pass
+
 
     def _gen_run_method(runnable_self: TensorflowRunnable, method_name: str):
         raw_method = getattr(runnable_self.model, method_name)
@@ -395,8 +392,7 @@ class TensorflowTensorContainer(
     ) -> t.List[Payload]:
         batches = cls.batch_to_batches(batch, indices, batch_dim)
 
-        payloads = [cls.to_payload(subbatch) for subbatch in batches]
-        return payloads
+        return [cls.to_payload(subbatch) for subbatch in batches]
 
     @classmethod
     def from_batch_payloads(

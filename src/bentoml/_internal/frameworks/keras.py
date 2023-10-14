@@ -313,17 +313,13 @@ def get_runnable(
                 return item
 
         def _run_method(
-            runnable_self: KerasRunnable, *args: "KerasArgType"
-        ) -> "ext.NpNDArray" | t.Tuple["ext.NpNDArray", ...]:
+                    runnable_self: KerasRunnable, *args: "KerasArgType"
+                ) -> "ext.NpNDArray" | t.Tuple["ext.NpNDArray", ...]:
             params = Params["KerasArgType"](*args)
 
             with tf.device(runnable_self.device_name):
                 params = params.map(_mapping)
-                if len(params.args) == 1:
-                    arg = params.args[0]
-                else:
-                    arg = params.args
-
+                arg = params.args[0] if len(params.args) == 1 else params.args
                 res: "tf_ext.EagerTensor" | "ext.NpNDArray" = raw_method(arg)
 
                 if LazyType["tf_ext.EagerTensor"](
@@ -331,9 +327,7 @@ def get_runnable(
                 ).isinstance(res):
                     return t.cast("ext.NpNDArray", res.numpy())
 
-                if isinstance(res, list):
-                    return tuple(res)
-                return res
+                return tuple(res) if isinstance(res, list) else res
 
         return _run_method
 

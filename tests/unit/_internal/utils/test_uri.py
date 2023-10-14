@@ -17,10 +17,7 @@ POSIX_PATHS = ["/foo/bar", "/foo/bar with space", "/foo/中文", "relative/path"
 
 @pytest.fixture()
 def example_paths():
-    if psutil.WINDOWS:
-        return WINDOWS_PATHS
-    else:
-        return POSIX_PATHS
+    return WINDOWS_PATHS if psutil.WINDOWS else POSIX_PATHS
 
 
 def test_uri_path_conversion(
@@ -31,4 +28,4 @@ def test_uri_path_conversion(
 
     for path in example_paths:
         restored = uri_to_path(path_to_uri(path))
-        assert restored == path or restored == os.path.abspath(path)
+        assert restored in [path, os.path.abspath(path)]

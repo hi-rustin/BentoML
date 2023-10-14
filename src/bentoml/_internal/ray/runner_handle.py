@@ -16,11 +16,7 @@ except ImportError:  # pragma: no cover
         "'ray' is required in order to use module 'bentoml.ray', install with 'pip install -U \"ray[serve]\"'. For more information, refer to https://docs.ray.io/",
     )
 
-if t.TYPE_CHECKING:
-    P = t.ParamSpec("P")
-else:
-    P = t.TypeVar("P")
-
+P = t.ParamSpec("P") if t.TYPE_CHECKING else t.TypeVar("P")
 R = t.TypeVar("R")
 
 

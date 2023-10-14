@@ -140,7 +140,7 @@ def save_model(
     if _extra_files is not None:
         if metadata is None:
             metadata = {}
-        metadata["_extra_files"] = [f for f in _extra_files]
+        metadata["_extra_files"] = list(_extra_files)
 
     if signatures is None:
         signatures = {"__call__": {"batchable": False}}

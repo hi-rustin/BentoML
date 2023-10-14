@@ -98,8 +98,7 @@ def _load_raw_model(bento_model: str | Tag | bentoml.Model) -> onnx.ModelProto:
         bento_model = get(bento_model)
 
     model_path = bento_model.path_of(MODEL_FILENAME)
-    raw_model = onnx.load(model_path)
-    return raw_model
+    return onnx.load(model_path)
 
 
 def load_model(
@@ -142,8 +141,9 @@ def load_model(
         )
 
     if providers:
-        if not all(
-            i in ort.get_all_providers() for i in flatten_providers_list(providers)
+        if any(
+            i not in ort.get_all_providers()
+            for i in flatten_providers_list(providers)
         ):
             raise BentoMLException(f"'{providers}' cannot be parsed by `onnxruntime`")
     else:

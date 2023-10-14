@@ -68,9 +68,7 @@ class BentoMLConfiguration:
 
         # User override configuration
         if override_config_file is not None:
-            logger.info(
-                "Applying user config override from path: %s" % override_config_file
-            )
+            logger.info(f"Applying user config override from path: {override_config_file}")
             override = load_config_file(override_config_file)
             if "version" not in override:
                 # If users does not define a version, we then by default assume they are using v1
@@ -151,13 +149,12 @@ class BentoMLConfiguration:
             "workers_per_resource",
         ]
         global_runner_cfg = {k: self.config["runners"][k] for k in RUNNER_CFG_KEYS}
-        custom_runners_cfg = dict(
+        if custom_runners_cfg := dict(
             filter(
                 lambda kv: kv[0] not in RUNNER_CFG_KEYS,
                 self.config["runners"].items(),
             )
-        )
-        if custom_runners_cfg:
+        ):
             for runner_name, runner_cfg in custom_runners_cfg.items():
                 # key is a runner name
                 if runner_cfg.get("resources") == "system":
@@ -489,14 +486,13 @@ class _BentoMLContainerClass:
 
         if "buckets" in duration:
             return tuple(duration["buckets"]) + (INF,)
-        else:
-            if len(set(duration) - {"min", "max", "factor"}) == 0:
-                return exponential_buckets(
-                    duration["min"], duration["factor"], duration["max"]
-                )
-            raise BentoMLConfigException(
-                f"Keys 'min', 'max', and 'factor' are required for 'duration' configuration, '{duration!r}'."
-            ) from None
+        if len(set(duration) - {"min", "max", "factor"}) == 0:
+            return exponential_buckets(
+                duration["min"], duration["factor"], duration["max"]
+            )
+        raise BentoMLConfigException(
+            f"Keys 'min', 'max', and 'factor' are required for 'duration' configuration, '{duration!r}'."
+        ) from None
 
     @providers.SingletonFactory
     @staticmethod

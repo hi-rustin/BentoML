@@ -341,17 +341,16 @@ class Image(
                     bytes_ = await val.read()
                     break
             else:
-                if len(found_mimes) == 0:
+                if not found_mimes:
                     raise BadInput("no image file found in multipart form")
+                if self._allowed_mimes is None:
+                    raise BadInput(
+                        f"no multipart image file (supported images are: {', '.join(MIME_EXT_MAPPING.keys())}, or 'image/*'), got files with content types {', '.join(found_mimes)}"
+                    )
                 else:
-                    if self._allowed_mimes is None:
-                        raise BadInput(
-                            f"no multipart image file (supported images are: {', '.join(MIME_EXT_MAPPING.keys())}, or 'image/*'), got files with content types {', '.join(found_mimes)}"
-                        )
-                    else:
-                        raise BadInput(
-                            f"no multipart image file (allowed mime types are: {', '.join(self._allowed_mimes)}), got files with content types {', '.join(found_mimes)}"
-                        )
+                    raise BadInput(
+                        f"no multipart image file (allowed mime types are: {', '.join(self._allowed_mimes)}), got files with content types {', '.join(found_mimes)}"
+                    )
 
         elif self._allowed_mimes is None:
             if mime_type in MIME_EXT_MAPPING or mime_type.startswith("image/"):
@@ -359,14 +358,9 @@ class Image(
         elif mime_type in self._allowed_mimes:
             bytes_ = await request.body()
         else:
-            if self._allowed_mimes is None:
-                raise BadInput(
-                    f"unsupported mime type {mime_type}; supported mime types are: {', '.join(MIME_EXT_MAPPING.keys())}, or 'image/*'"
-                )
-            else:
-                raise BadInput(
-                    f"mime type {mime_type} is not allowed, allowed mime types are: {', '.join(self._allowed_mimes)}"
-                )
+            raise BadInput(
+                f"mime type {mime_type} is not allowed, allowed mime types are: {', '.join(self._allowed_mimes)}"
+            )
 
         assert bytes_ is not None
 
@@ -397,29 +391,28 @@ class Image(
         # rfc2183
         content_disposition_filename = quote(filename)
         if content_disposition_filename != filename:
-            content_disposition = "attachment; filename*=utf-8''{}".format(
-                content_disposition_filename
+            content_disposition = (
+                f"attachment; filename*=utf-8''{content_disposition_filename}"
             )
         else:
             content_disposition = f'attachment; filename="{filename}"'
 
-        if ctx is not None:
-            if "content-disposition" not in ctx.response.headers:
-                ctx.response.headers["content-disposition"] = content_disposition
-            res = Response(
-                ret.getvalue(),
-                media_type=self._mime_type,
-                headers=ctx.response.headers,  # type: ignore (bad starlette types)
-                status_code=ctx.response.status_code,
-            )
-            set_cookies(res, ctx.response.cookies)
-            return res
-        else:
+        if ctx is None:
             return Response(
                 ret.getvalue(),
                 media_type=self._mime_type,
                 headers={"content-disposition": content_disposition},
             )
+        if "content-disposition" not in ctx.response.headers:
+            ctx.response.headers["content-disposition"] = content_disposition
+        res = Response(
+            ret.getvalue(),
+            media_type=self._mime_type,
+            headers=ctx.response.headers,  # type: ignore (bad starlette types)
+            status_code=ctx.response.status_code,
+        )
+        set_cookies(res, ctx.response.cookies)
+        return res
 
     async def from_proto(self, field: pb.File | pb_v1alpha1.File | bytes) -> ImageType:
         if isinstance(field, bytes):

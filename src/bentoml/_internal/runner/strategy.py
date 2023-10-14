@@ -172,10 +172,8 @@ class DefaultStrategy(Strategy):
                     worker_index,
                     thread_count,
                 )
-                return environ
             else:
                 for thread_env in THREAD_ENVS:
                     environ[thread_env] = "1"
-                return environ
-
+            return environ
         return environ

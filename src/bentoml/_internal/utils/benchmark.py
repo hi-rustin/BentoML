@@ -221,10 +221,7 @@ class Stat:
 
 
 def default_verify_response(status, _):
-    if status // 100 == 2:
-        return True
-    else:
-        return False
+    return status // 100 == 2
 
 
 class BenchmarkClient:
@@ -364,13 +361,12 @@ class BenchmarkClient:
                 print(f"------ spawn canceled before {total} users ------")
 
     def kill(self):
-        if self.user_pool:
-            self.user_pool.pop().cancel()
-            if not self.user_pool:
-                self.status = self.STATUS_STOPPED
-            return True
-        else:
+        if not self.user_pool:
             return False
+        self.user_pool.pop().cancel()
+        if not self.user_pool:
+            self.status = self.STATUS_STOPPED
+        return True
 
     def batch_spawn(self, total, speed):
         if self.status in {self.STATUS_STOPPED}:

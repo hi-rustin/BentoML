@@ -35,7 +35,7 @@ class Runnable:
     ] | None = None
 
     def __setattr__(self, attr_name: str, value: t.Any):
-        if attr_name in ("SUPPORTED_RESOURCES", "SUPPORTS_CPU_MULTI_THREADING"):
+        if attr_name in {"SUPPORTED_RESOURCES", "SUPPORTS_CPU_MULTI_THREADING"}:
             # TODO: add link to custom runner documentation
             raise BentoMLException(
                 f"{attr_name} should not be set at runtime; the change will not be reflected in the scheduling strategy. Instead, create separate Runnables with different supported resource configurations."
@@ -44,7 +44,7 @@ class Runnable:
         super().__setattr__(attr_name, value)
 
     def __getattribute__(self, item: str) -> t.Any:
-        if item in ["add_method", "method"]:
+        if item in {"add_method", "method"}:
             # TODO: add link to custom runner documentation
             raise BentoMLException(
                 f"{item} should not be used at runtime; instead, use {type(self).__name__}.{item} where you define the class."
@@ -124,9 +124,7 @@ class Runnable:
                 ),
             )
 
-        if callable(meth):
-            return method_decorator(meth)
-        return method_decorator
+        return method_decorator(meth) if callable(meth) else method_decorator
 
 
 @attr.define

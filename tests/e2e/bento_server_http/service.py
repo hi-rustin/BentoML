@@ -56,8 +56,7 @@ def echo_data_metric(data: str) -> str:
 
 @svc.api(input=JSON(), output=JSON())
 async def echo_delay(data: dict[str, t.Any]) -> JSONSerializable:
-    ret = await py_model.echo_delay.async_run(data)
-    return ret
+    return await py_model.echo_delay.async_run(data)
 
 
 @svc.api(input=bentoml.io.Text(), output=bentoml.io.Text())

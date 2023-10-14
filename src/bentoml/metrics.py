@@ -399,11 +399,7 @@ class _LazyMetric:
             )
         self._args = args
         self._kwargs = kwargs
-        if self._attr in _INTERNAL_FN_IMPL:
-            # first-class function implementation from BentoML Prometheus client.
-            # In this case, the function will be called directly.
-            return self._load_proxy()
-        return self
+        return self._load_proxy() if self._attr in _INTERNAL_FN_IMPL else self
 
     def __getattr__(self, item: t.Any) -> t.Any:
         if item in self.__slots__:

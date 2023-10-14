@@ -25,10 +25,7 @@ def parse_delete_targets_argument_callback(
     if value is None:
         return value
     value = " ".join(value)
-    if "," in value:
-        delete_targets = value.split(",")
-    else:
-        delete_targets = value.split()
+    delete_targets = value.split(",") if "," in value else value.split()
     delete_targets = list(map(str.strip, delete_targets))
     for delete_target in delete_targets:
         if not (
@@ -144,19 +141,19 @@ def add_model_management_commands(cli: Group) -> None:
 
     @model_cli.command()
     @click.argument(
-        "delete_targets",
-        nargs=-1,
-        callback=parse_delete_targets_argument_callback,
-        required=True,
-    )
+            "delete_targets",
+            nargs=-1,
+            callback=parse_delete_targets_argument_callback,
+            required=True,
+        )
     @click.option(
-        "-y",
-        "--yes",
-        "--assume-yes",
-        is_flag=True,
-        help="Skip confirmation when deleting a specific model",
-    )
-    def delete(delete_targets: str, yes: bool) -> None:  # type: ignore (not accessed)
+            "-y",
+            "--yes",
+            "--assume-yes",
+            is_flag=True,
+            help="Skip confirmation when deleting a specific model",
+        )
+    def delete(delete_targets: str, yes: bool) -> None:    # type: ignore (not accessed)
         """Delete Model in local model store.
 
         \b
@@ -191,11 +188,7 @@ def add_model_management_commands(cli: Group) -> None:
                 to_delete_models = [model_store.get(tag)]
 
             for model in to_delete_models:
-                if yes:
-                    delete_confirmed = True
-                else:
-                    delete_confirmed = click.confirm(f"delete model {model.tag}?")
-
+                delete_confirmed = True if yes else click.confirm(f"delete model {model.tag}?")
                 if delete_confirmed:
                     check_model_is_used(model.tag)
                     model_store.delete(model.tag)

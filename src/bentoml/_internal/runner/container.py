@@ -279,31 +279,30 @@ class NdarrayContainer(DataContainer["ext.NpNDArray", "ext.NpNDArray"]):
         batch_dim: int,
     ) -> Payload:
         # skip 0-dimensional array
-        if batch.shape:
-            if not (batch.flags["C_CONTIGUOUS"] or batch.flags["F_CONTIGUOUS"]):
-                # TODO: use fortan contiguous if it's faster
-                batch = np.ascontiguousarray(batch)
-
-            bs: bytes
-            concat_buffer_bs: bytes
-            indices: list[int]
-            bs, concat_buffer_bs, indices = pep574_dumps(batch)
-            bs_str = base64.b64encode(bs).decode("ascii")
-
+        if not batch.shape:
             return cls.create_payload(
-                concat_buffer_bs,
+                pickle.dumps(batch),
                 batch.shape[batch_dim],
-                {
-                    "format": "pickle5",
-                    "pickle_bytes_str": bs_str,
-                    "indices": indices,
-                },
+                {"format": "default"},
             )
+        if not (batch.flags["C_CONTIGUOUS"] or batch.flags["F_CONTIGUOUS"]):
+            # TODO: use fortan contiguous if it's faster
+            batch = np.ascontiguousarray(batch)
+
+        bs: bytes
+        concat_buffer_bs: bytes
+        indices: list[int]
+        bs, concat_buffer_bs, indices = pep574_dumps(batch)
+        bs_str = base64.b64encode(bs).decode("ascii")
 
         return cls.create_payload(
-            pickle.dumps(batch),
+            concat_buffer_bs,
             batch.shape[batch_dim],
-            {"format": "default"},
+            {
+                "format": "pickle5",
+                "pickle_bytes_str": bs_str,
+                "indices": indices,
+            },
         )
 
     @classmethod
@@ -329,8 +328,7 @@ class NdarrayContainer(DataContainer["ext.NpNDArray", "ext.NpNDArray"]):
     ) -> list[Payload]:
         batches = cls.batch_to_batches(batch, indices, batch_dim)
 
-        payloads = [cls.to_payload(subbatch, batch_dim) for subbatch in batches]
-        return payloads
+        return [cls.to_payload(subbatch, batch_dim) for subbatch in batches]
 
     @classmethod
     def from_batch_payloads(
@@ -420,13 +418,12 @@ class PandasDataFrameContainer(
         cls,
         payload: Payload,
     ) -> ext.PdDataFrame:
-        if payload.meta["with_buffer"]:
-            bs_str = t.cast(str, payload.meta["pickle_bytes_str"])
-            bs = base64.b64decode(bs_str)
-            indices = t.cast(t.List[int], payload.meta["indices"])
-            return pep574_loads(bs, payload.data, indices)
-        else:
+        if not payload.meta["with_buffer"]:
             return pep574_loads(payload.data, b"", [])
+        bs_str = t.cast(str, payload.meta["pickle_bytes_str"])
+        bs = base64.b64decode(bs_str)
+        indices = t.cast(t.List[int], payload.meta["indices"])
+        return pep574_loads(bs, payload.data, indices)
 
     @classmethod
     def batch_to_payloads(
@@ -437,8 +434,7 @@ class PandasDataFrameContainer(
     ) -> list[Payload]:
         batches = cls.batch_to_batches(batch, indices, batch_dim)
 
-        payloads = [cls.to_payload(subbatch, batch_dim) for subbatch in batches]
-        return payloads
+        return [cls.to_payload(subbatch, batch_dim) for subbatch in batches]
 
     @classmethod
     def from_batch_payloads(  # pylint: disable=arguments-differ
@@ -501,8 +497,7 @@ class DefaultContainer(DataContainer[t.Any, t.List[t.Any]]):
     ) -> list[Payload]:
         batches = cls.batch_to_batches(batch, indices, batch_dim)
 
-        payloads = [cls.to_payload(subbatch, batch_dim) for subbatch in batches]
-        return payloads
+        return [cls.to_payload(subbatch, batch_dim) for subbatch in batches]
 
     @classmethod
     def from_batch_payloads(

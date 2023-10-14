@@ -212,29 +212,29 @@ class _TritonRunner(_AbstractRunner):
         if isinstance(self._runner_handle, TritonRunnerHandle):
             if item in self._runner_handle.client_methods:
                 # NOTE: auto wrap triton methods to its respective clients
-                if self.tritonserver_type == "grpc":
-                    return _handle_triton_exception(
+                return (
+                    _handle_triton_exception(
                         getattr(self._runner_handle.grpc_client, item)
                     )
-                else:
-                    return _handle_triton_exception(
+                    if self.tritonserver_type == "grpc"
+                    else _handle_triton_exception(
                         getattr(self._runner_handle.http_client, item)
                     )
-            else:
-                # if given item is not a client method, then we assume it is a model name.
-                # Hence, we will return a RunnerMethod that will be responsible for this model handle.
-                RT = (
-                    _tritonhttpclient.InferResult
-                    if self.tritonserver_type == "http"
-                    else _tritongrpcclient.InferResult
                 )
-                return _RunnerMethod[t.Any, _P, RT](
-                    runner=self,
-                    name=item,
-                    config=_RunnableMethodConfig(batchable=True, batch_dim=(0, 0)),
-                    max_batch_size=0,
-                    max_latency_ms=10000,
-                )
+            # if given item is not a client method, then we assume it is a model name.
+            # Hence, we will return a RunnerMethod that will be responsible for this model handle.
+            RT = (
+                _tritonhttpclient.InferResult
+                if self.tritonserver_type == "http"
+                else _tritongrpcclient.InferResult
+            )
+            return _RunnerMethod[t.Any, _P, RT](
+                runner=self,
+                name=item,
+                config=_RunnableMethodConfig(batchable=True, batch_dim=(0, 0)),
+                max_batch_size=0,
+                max_latency_ms=10000,
+            )
 
         return super().__getattribute__(item)
 

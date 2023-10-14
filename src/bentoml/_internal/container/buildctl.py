@@ -27,9 +27,7 @@ def find_binary() -> str | None:
 
 
 def buildkitd_health() -> bool:
-    if shutil.which("buildkitd") or os.getenv("BUILDKIT_HOST", "") != "":
-        pass
-    else:
+    if not shutil.which("buildkitd") and os.getenv("BUILDKIT_HOST", "") == "":
         logger.error(
             "Both buildkitd and BUILDKIT_HOST are not found. Ensure to use either of them."
         )
@@ -109,7 +107,7 @@ def construct_build_args(
 
     local: dict[str, str] = buildctl_args.pop("local", {})
     if isinstance(local, tuple):
-        local = {k: v for (k, v) in map(lambda s: tuple(s.split("=")), local)}
+        local = dict(map(lambda s: tuple(s.split("=")), local))
     if "context" in local:
         logger.warning(
             "Passing 'context' to 'local' is not supported. If you are using Python API, use 'context_path' instead."
@@ -153,26 +151,25 @@ def construct_build_args(
         else:
             raise ValueError(f"Unsupported type for {k}: {type(v)}")
 
-    if tag is not None:
-        if output is None:
-            logger.warning(
-                "Autoconfig for output type is deprecated and will be removed in the next major release. See message below."
-            )
-            # NOTE: We will always use the docker image spec if docker is available.
-            # Otherwise fallback to the OCI image spec.
-            if shutil.which("docker") is not None:
-                cmds.construct_args(
-                    tuple(map(lambda tg: f"type=docker,name=docker.io/{tg}", tag)),
-                    opt="output",
-                )
-            else:
-                cmds.construct_args(
-                    tuple(map(lambda tg: f"type=oci,name={tg}", tag)),
-                    opt="output",
-                )
-    else:
+    if tag is None:
         logger.info(
             "'tag' is not specified. Result image will only be saved in build cache."
         )
 
+    elif output is None:
+        logger.warning(
+            "Autoconfig for output type is deprecated and will be removed in the next major release. See message below."
+        )
+        # NOTE: We will always use the docker image spec if docker is available.
+        # Otherwise fallback to the OCI image spec.
+        if shutil.which("docker") is not None:
+            cmds.construct_args(
+                tuple(map(lambda tg: f"type=docker,name=docker.io/{tg}", tag)),
+                opt="output",
+            )
+        else:
+            cmds.construct_args(
+                tuple(map(lambda tg: f"type=oci,name={tg}", tag)),
+                opt="output",
+            )
     return cmds

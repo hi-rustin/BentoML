@@ -72,8 +72,7 @@ def _str2cls(
     module_name, _, class_name = full_cls_str.rpartition(".")
 
     module = importlib.import_module(module_name)
-    cls = getattr(module, class_name)
-    return cls
+    return getattr(module, class_name)
 
 
 def _extract_commit_hash(
@@ -84,7 +83,7 @@ def _extract_commit_hash(
     modified from https://github.com/huggingface/transformers/blob/0b7b4429c78de68acaf72224eb6dae43616d820c/src/transformers/utils/hub.py#L219
     """
 
-    resolved_dir = str(Path(resolved_dir).as_posix()) + "/"
+    resolved_dir = f"{str(Path(resolved_dir).as_posix())}/"
     search = re.search(r"snapshots/([^/]+)/", resolved_dir)
 
     if search is None:
@@ -205,11 +204,9 @@ def load_model(
     diffusion_model_dir = bento_model.path_of(DIFFUSION_MODEL_FOLDER)
 
     if low_cpu_mem_usage is None:
-        if is_torch_version(">=", "1.9.0") and is_accelerate_available():
-            low_cpu_mem_usage = True
-        else:
-            low_cpu_mem_usage = False
-
+        low_cpu_mem_usage = bool(
+            is_torch_version(">=", "1.9.0") and is_accelerate_available()
+        )
     load_pretrained_extra_kwargs = load_pretrained_extra_kwargs or {}
     pipeline: diffusers.DiffusionPipeline = pipeline_class.from_pretrained(
         diffusion_model_dir,
@@ -390,7 +387,7 @@ def import_model(
             version = _extract_commit_hash(src_dir, REGEX_COMMIT_HASH)
             if version is not None:
                 if variant is not None:
-                    version = version + "-" + variant
+                    version = f"{version}-{variant}"
                 tag.version = version
 
     else:

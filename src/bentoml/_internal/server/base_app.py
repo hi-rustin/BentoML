@@ -91,8 +91,9 @@ class BaseAppFactory(abc.ABC):
     def routes(self) -> list[BaseRoute]:
         from starlette.routing import Route
 
-        routes: list[BaseRoute] = []
-        routes.append(Route(path="/livez", name="livez", endpoint=self.livez))
+        routes: list[BaseRoute] = [
+            Route(path="/livez", name="livez", endpoint=self.livez)
+        ]
         routes.append(Route(path="/healthz", name="healthz", endpoint=self.livez))
         routes.append(Route(path="/readyz", name="readyz", endpoint=self.readyz))
         return routes

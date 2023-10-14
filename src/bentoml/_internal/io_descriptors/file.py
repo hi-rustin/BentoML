@@ -215,11 +215,7 @@ class File(
         }
 
     async def to_http_response(self, obj: FileType, ctx: Context | None = None):
-        if isinstance(obj, bytes):
-            body = obj
-        else:
-            body = obj.read()
-
+        body = obj if isinstance(obj, bytes) else obj.read()
         if ctx is not None:
             res = Response(
                 body,
@@ -239,11 +235,7 @@ class File(
         return res
 
     async def to_proto(self, obj: FileType) -> pb.File:
-        if isinstance(obj, bytes):
-            body = obj
-        else:
-            body = obj.read()
-
+        body = obj if isinstance(obj, bytes) else obj.read()
         return pb.File(
             kind="appliction/octet-stream"
             if self._mime_type is None
@@ -252,11 +244,7 @@ class File(
         )
 
     async def to_proto_v1alpha1(self, obj: FileType) -> pb_v1alpha1.File:
-        if isinstance(obj, bytes):
-            body = obj
-        else:
-            body = obj.read()
-
+        body = obj if isinstance(obj, bytes) else obj.read()
         try:
             kind = mimetype_to_filetype_pb_map()[
                 "application/octet-stream"

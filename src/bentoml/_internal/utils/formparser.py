@@ -348,9 +348,7 @@ async def concat_to_multipart_response(
     for field_name, resp in responses.items():
         writer.write(b"--%b\r\n" % boundary_bytes)
 
-        # headers
-        filename = _get_disp_filename(resp.headers)
-        if filename:
+        if filename := _get_disp_filename(resp.headers):
             writer.write(
                 b'Content-Disposition: form-data; name="%b"; filename="%b"\r\n'
                 % (field_name.encode("latin1"), filename)
@@ -373,16 +371,15 @@ async def concat_to_multipart_response(
 
     writer.write(b"--%b--\r\n" % boundary_bytes)
 
-    if ctx is not None:
-        res = Response(
-            writer.getvalue(),
-            headers=ctx.response.metadata,  # type: ignore (pyright thinks the type is dict[Unknown, Unknown])
-            media_type=f"multipart/form-data; boundary={boundary}",
-            status_code=ctx.response.status_code,
-        )
-        set_cookies(res, ctx.response.cookies)
-        return res
-    else:
+    if ctx is None:
         return Response(
             writer.getvalue(), media_type=f"multipart/form-data; boundary={boundary}"
         )
+    res = Response(
+        writer.getvalue(),
+        headers=ctx.response.metadata,  # type: ignore (pyright thinks the type is dict[Unknown, Unknown])
+        media_type=f"multipart/form-data; boundary={boundary}",
+        status_code=ctx.response.status_code,
+    )
+    set_cookies(res, ctx.response.cookies)
+    return res

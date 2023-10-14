@@ -56,13 +56,12 @@ def rename_fields(
         ) from None
     if current in d:
         if remove_only:
-            logger.warning("Field '%s' is deprecated and will be removed." % current)
+            logger.warning(f"Field '{current}' is deprecated and will be removed.")
             d.pop(current)
         else:
             assert replace_with, "'replace_with' must be provided."
             logger.warning(
-                "Field '%s' is deprecated and has been renamed to '%s'"
-                % (current, replace_with)
+                f"Field '{current}' is deprecated and has been renamed to '{replace_with}'"
             )
             d[replace_with] = d.pop(current)
 
@@ -90,9 +89,7 @@ def flatten_dict(
 def load_config_file(path: str) -> dict[str, t.Any]:
     """Load configuration from given path."""
     if not os.path.exists(path):
-        raise BentoMLConfigException(
-            "Configuration file %s not found." % path
-        ) from None
+        raise BentoMLConfigException(f"Configuration file {path} not found.") from None
     with open(path, "rb") as f:
         config = yaml.safe_load(f)
     return config
@@ -123,7 +120,7 @@ def validate_tracing_type(tracing_type: str) -> bool:
 
 
 def validate_otlp_protocol(protocol: str) -> bool:
-    return protocol in ["grpc", "http"]
+    return protocol in {"grpc", "http"}
 
 
 def ensure_larger_than(target: int | float) -> t.Callable[[int | float], bool]:

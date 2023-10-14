@@ -250,10 +250,10 @@ def push(
     _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
 ):
     """Push Bento to a yatai server."""
-    bento = _bento_store.get(tag)
-    if not bento:
+    if bento := _bento_store.get(tag):
+        _cloud_client.push_bento(bento, force=force)
+    else:
         raise BentoMLException(f"Bento {tag} not found in local store")
-    _cloud_client.push_bento(bento, force=force)
 
 
 @inject
@@ -360,12 +360,9 @@ def build(
         models=models or [],
     )
 
-    build_args = ["bentoml", "build"]
-
     if build_ctx is None:
         build_ctx = "."
-    build_args.append(build_ctx)
-
+    build_args = ["bentoml", "build", build_ctx]
     if version is not None:
         build_args.extend(["--version", version])
     build_args.extend(["--output", "tag"])
@@ -419,10 +416,9 @@ def build_bentofile(
     except FileNotFoundError:
         raise InvalidArgument(f'bentofile "{bentofile}" not found')
 
-    build_args = ["bentoml", "build"]
     if build_ctx is None:
         build_ctx = "."
-    build_args.append(build_ctx)
+    build_args = ["bentoml", "build", build_ctx]
     if version is not None:
         build_args.extend(["--version", version])
     build_args.extend(["--bentofile", bentofile, "--output", "tag"])

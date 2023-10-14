@@ -30,8 +30,7 @@ def metadata():
 @flask_app.route("/predict_flask", methods=["POST"])
 def predict():
     content_type = request.headers.get("Content-Type")
-    if content_type == "application/json":
-        input_arr = np.array(request.json, dtype=float)
-        return jsonify(iris_clf_runner.predict.run(input_arr).tolist())
-    else:
+    if content_type != "application/json":
         return "Content-Type not supported!"
+    input_arr = np.array(request.json, dtype=float)
+    return jsonify(iris_clf_runner.predict.run(input_arr).tolist())

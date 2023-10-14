@@ -74,9 +74,7 @@ class DefaultJsonEncoder(json.JSONEncoder):
             if "__root__" in obj_dict:
                 obj_dict = obj_dict.get("__root__")
             return obj_dict
-        if attr.has(o):
-            return bentoml_cattr.unstructure(o)
-        return super().default(o)
+        return bentoml_cattr.unstructure(o) if attr.has(o) else super().default(o)
 
 
 class JSON(
@@ -306,16 +304,7 @@ class JSON(
         if not self._pydantic_model:
             return Schema(type="object")
 
-        # returns schemas from pydantic_model.
-        if pkg_version_info("pydantic")[0] >= 2:
-            json_schema = jschema.model_json_schema(
-                self._pydantic_model, ref_template=REF_PREFIX + "{model}"
-            )
-            # NOTE: we don't need def here, as these will be available in openapi.components.
-            if "$defs" in json_schema:
-                json_schema.pop("$defs", None)
-            return Schema(**json_schema)
-        else:
+        if pkg_version_info("pydantic")[0] < 2:
             return Schema(
                 **schema.model_process_schema(
                     self._pydantic_model,
@@ -325,6 +314,13 @@ class JSON(
                     ref_prefix=REF_PREFIX,
                 )[0]
             )
+        json_schema = jschema.model_json_schema(
+            self._pydantic_model, ref_template=REF_PREFIX + "{model}"
+        )
+        # NOTE: we don't need def here, as these will be available in openapi.components.
+        if "$defs" in json_schema:
+            json_schema.pop("$defs", None)
+        return Schema(**json_schema)
 
     def openapi_components(self) -> dict[str, t.Any] | None:
         if not self._pydantic_model:
@@ -384,28 +380,23 @@ class JSON(
         except json.JSONDecodeError as e:
             raise BadInput(f"Invalid JSON input received: {e}") from None
 
-        if self._pydantic_model:
-            try:
-                if pkg_version_info("pydantic")[0] >= 2:
-                    pydantic_model = self._pydantic_model.model_validate(json_obj)
-                else:
-                    pydantic_model = self._pydantic_model.parse_obj(json_obj)
-                return pydantic_model
-            except pydantic.ValidationError as e:
-                raise BadInput(f"Invalid JSON input received: {e}") from None
-        else:
+        if not self._pydantic_model:
             return json_obj
+        try:
+            return (
+                self._pydantic_model.model_validate(json_obj)
+                if pkg_version_info("pydantic")[0] >= 2
+                else self._pydantic_model.parse_obj(json_obj)
+            )
+        except pydantic.ValidationError as e:
+            raise BadInput(f"Invalid JSON input received: {e}") from None
 
     async def to_http_response(
         self, obj: JSONType | pydantic.BaseModel, ctx: Context | None = None
     ):
         # This is to prevent cases where custom JSON encoder is used.
         if LazyType["pydantic.BaseModel"]("pydantic.BaseModel").isinstance(obj):
-            if pkg_version_info("pydantic")[0] >= 2:
-                obj = obj.model_dump()
-            else:
-                obj = obj.dict()
-
+            obj = obj.model_dump() if pkg_version_info("pydantic")[0] >= 2 else obj.dict()
         json_str = (
             json.dumps(
                 obj,
@@ -419,17 +410,16 @@ class JSON(
             else None
         )
 
-        if ctx is not None:
-            res = Response(
-                json_str,
-                media_type=self._mime_type,
-                headers=ctx.response.metadata,  # type: ignore (bad starlette types)
-                status_code=ctx.response.status_code,
-            )
-            set_cookies(res, ctx.response.cookies)
-            return res
-        else:
+        if ctx is None:
             return Response(json_str, media_type=self._mime_type)
+        res = Response(
+            json_str,
+            media_type=self._mime_type,
+            headers=ctx.response.metadata,  # type: ignore (bad starlette types)
+            status_code=ctx.response.status_code,
+        )
+        set_cookies(res, ctx.response.cookies)
+        return res
 
     async def from_proto(self, field: struct_pb2.Value | bytes) -> JSONType:
         from google.protobuf.json_format import MessageToDict
@@ -466,10 +456,7 @@ class JSON(
 
     async def to_proto(self, obj: JSONType) -> struct_pb2.Value:
         if LazyType["pydantic.BaseModel"]("pydantic.BaseModel").isinstance(obj):
-            if pkg_version_info("pydantic")[0] >= 2:
-                obj = obj.model_dump()
-            else:
-                obj = obj.dict()
+            obj = obj.model_dump() if pkg_version_info("pydantic")[0] >= 2 else obj.dict()
         msg = struct_pb2.Value()
         return parse_dict_to_proto(obj, msg, json_encoder=self._json_encoder)
 

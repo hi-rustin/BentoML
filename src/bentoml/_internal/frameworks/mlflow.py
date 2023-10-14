@@ -171,17 +171,17 @@ def import_model(
         )
 
     with bentoml.models.create(
-        name,
-        module=MODULE_NAME,
-        api_version=API_VERSION,
-        signatures=signatures,
-        labels=labels,
-        options=None,
-        custom_objects=custom_objects,
-        external_modules=external_modules,
-        metadata=metadata,
-        context=context,
-    ) as bento_model:
+            name,
+            module=MODULE_NAME,
+            api_version=API_VERSION,
+            signatures=signatures,
+            labels=labels,
+            options=None,
+            custom_objects=custom_objects,
+            external_modules=external_modules,
+            metadata=metadata,
+            context=context,
+        ) as bento_model:
         from mlflow.models import Model as MLflowModel
         from mlflow.pyfunc import FLAVOR_NAME as PYFUNC_FLAVOR_NAME
         from mlflow.models.model import MLMODEL_FILE_NAME
@@ -198,7 +198,7 @@ def import_model(
             local_path = download_artifacts(
                 artifact_uri=model_uri, dst_path=download_dir
             )
-        except (ModuleNotFoundError, ImportError):
+        except ImportError:
             # For MLflow < 1.25
             from mlflow.tracking.artifact_utils import _download_artifact_from_uri
 

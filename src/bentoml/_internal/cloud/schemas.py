@@ -13,15 +13,11 @@ time_format = "%Y-%m-%d %H:%M:%S.%f"
 
 
 def datetime_encoder(time_obj: t.Optional[datetime]) -> t.Optional[str]:
-    if not time_obj:
-        return None
-    return time_obj.strftime(time_format)
+    return None if not time_obj else time_obj.strftime(time_format)
 
 
 def datetime_decoder(datetime_str: t.Optional[str], _: t.Any) -> t.Optional[datetime]:
-    if not datetime_str:
-        return None
-    return parse(datetime_str)
+    return None if not datetime_str else parse(datetime_str)
 
 
 def dict_options_converter(
@@ -30,9 +26,7 @@ def dict_options_converter(
     def _converter(value: type[t.Any] | dict[str, t.Any] | None) -> options_type:
         if value is None:
             return options_type()
-        if isinstance(value, dict):
-            return options_type(**value)
-        return value
+        return options_type(**value) if isinstance(value, dict) else value
 
     return _converter
 
@@ -109,9 +103,10 @@ class UserSchema:
     last_name: str
 
     def get_name(self) -> str:
-        if not self.first_name and not self.last_name:
+        if self.first_name or self.last_name:
+            return f"{self.first_name} {self.last_name}".strip()
+        else:
             return self.name
-        return f"{self.first_name} {self.last_name}".strip()
 
 
 @attr.define

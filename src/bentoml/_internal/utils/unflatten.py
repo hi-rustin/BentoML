@@ -35,6 +35,7 @@ IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 
 """
+
 from __future__ import annotations
 from __future__ import absolute_import
 
@@ -43,10 +44,7 @@ import sys
 import typing as t
 from operator import itemgetter
 
-if sys.version_info[0] == 2:
-    string_type = basestring  # noqa: F821
-else:
-    string_type = str
+string_type = basestring if sys.version_info[0] == 2 else str
 
 
 def unflatten(arg: dict[str, t.Any]) -> dict[str, t.Any]:
@@ -82,11 +80,7 @@ def unflatten(arg: dict[str, t.Any]) -> dict[str, t.Any]:
     {'foo': [{'bar': 'val'}, {'baz': 'x'}]}
 
     """
-    if hasattr(arg, "items"):
-        items = arg.items()
-    else:
-        items = arg
-
+    items = arg.items() if hasattr(arg, "items") else arg
     data: dict[str, t.Any] = {}
     holders: list[t.Any] = []
     for flat_key, val in items:
@@ -127,10 +121,7 @@ def unflatten(arg: dict[str, t.Any]) -> dict[str, t.Any]:
 
 
 def _node_type(value: _holder) -> tuple[object] | t.Literal["terminal"]:
-    if isinstance(value, _holder):
-        return (value.node_type,)
-    else:
-        return "terminal"
+    return (value.node_type, ) if isinstance(value, _holder) else "terminal"
 
 
 class _holder(dict):
@@ -201,10 +192,10 @@ def _parse_key(flat_key: str):
                 string = ""
             elif i == 0:
                 string = string[2:-1] if string.startswith(".") else string[1:-1]
-            else:
-                if string[0] != ".":
-                    raise ValueError("invalid string %r in key %r" % (string, flat_key))
+            elif string[0] == ".":
                 string = string[2:-1]
+            else:
+                raise ValueError("invalid string %r in key %r" % (string, flat_key))
             parts.append(string)
 
         elif split_key[i + 2] is not None:
@@ -218,15 +209,15 @@ def _parse_key(flat_key: str):
                 string = ""
             elif i == 0:
                 string = string[1:] if string.startswith(".") else string
-            else:
-                if string[0] != ".":
-                    raise ValueError("invalid string %r in key %r" % (string, flat_key))
+            elif string[0] == ".":
                 string = string[1:]
+            else:
+                raise ValueError("invalid string %r in key %r" % (string, flat_key))
             parts.append(string)
         else:
             assert False
 
-    if len(parts) > 0 and isinstance(parts[0], int):
+    if parts and isinstance(parts[0], int):
         parts.insert(0, "")
     return parts
 

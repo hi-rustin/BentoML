@@ -160,14 +160,12 @@ def wrap_rpc_handler(
     if not handler.request_streaming and not handler.response_streaming:
         assert handler.unary_unary
         return handler._replace(unary_unary=wrapper(handler.unary_unary))
-    elif not handler.request_streaming and handler.response_streaming:
+    elif not handler.request_streaming:
         assert handler.unary_stream
         return handler._replace(unary_stream=wrapper(handler.unary_stream))
-    elif handler.request_streaming and not handler.response_streaming:
+    elif not handler.response_streaming:
         assert handler.stream_unary
         return handler._replace(stream_unary=wrapper(handler.stream_unary))
-    elif handler.request_streaming and handler.response_streaming:
+    else:
         assert handler.stream_stream
         return handler._replace(stream_stream=wrapper(handler.stream_stream))
-    else:
-        raise RuntimeError(f"RPC method handler {handler} does not exist.") from None

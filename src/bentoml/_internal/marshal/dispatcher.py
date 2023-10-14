@@ -139,7 +139,7 @@ class CorkDispatcher:
         self.max_latency = max_latency_in_ms / 1000.0
         self.fallback = fallback
         self.optimizer = Optimizer(self.max_latency)
-        self.max_batch_size = int(max_batch_size)
+        self.max_batch_size = max_batch_size
         self.tick_interval = 0.001
 
         self._controller = None
@@ -235,12 +235,11 @@ class CorkDispatcher:
                         for input_info in self._queue:
                             if (
                                 batch_size + input_info.data.sample.batch_size
-                                < self.max_batch_size
+                                >= self.max_batch_size
                             ):
-                                n_call_out += 1
-                                batch_size += input_info.data.sample.batch_size
-                            else:
                                 break
+                            n_call_out += 1
+                            batch_size += input_info.data.sample.batch_size
                     except Exception as e:
                         n_call_out = min(n, self.max_batch_size)
                         logger.error(
@@ -335,12 +334,11 @@ class CorkDispatcher:
                         for input_info in self._queue:
                             if (
                                 batch_size + input_info.data.sample.batch_size
-                                < self.max_batch_size
+                                >= self.max_batch_size
                             ):
-                                n_call_out += 1
-                                batch_size += input_info.data.sample.batch_size
-                            else:
                                 break
+                            n_call_out += 1
+                            batch_size += input_info.data.sample.batch_size
                     except Exception as e:
                         n_call_out = min(n, self.max_batch_size)
                         logger.error(

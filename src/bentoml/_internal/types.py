@@ -33,9 +33,7 @@ if sys.version_info < (3, 8):
         if isinstance(type_, t.TypeVar):
             return type_
 
-        if type_ in BUILTINS_MAPPING:
-            return BUILTINS_MAPPING[type_]
-        return type_
+        return BUILTINS_MAPPING[type_] if type_ in BUILTINS_MAPPING else type_
 
     def get_args(type_: t.Type) -> tuple[t.Type]:
         if isinstance(type_, GenericClass) and not type_._special:
@@ -49,14 +47,13 @@ if sys.version_info < (3, 8):
 
     def get_origin(type_: t.Type) -> t.Type:
         if isinstance(type_, GenericClass) and not type_._special:
-            ori = type_.__origin__
+            return type_.__origin__
         elif hasattr(type_, "_special") and type_._special:
-            ori = type_
+            return type_
         elif type_ is t.Generic:
-            ori = t.Generic
+            return t.Generic
         else:
-            ori = None
-        return ori
+            return None
 
 else:
     from typing import get_args
@@ -211,9 +208,7 @@ class LazyType(t.Generic[T]):
 
     @classmethod
     def from_type(cls, typ_: t.Union[LazyType[T], t.Type[T]]) -> LazyType[T]:
-        if isinstance(typ_, LazyType):
-            return typ_
-        return cls(typ_)
+        return typ_ if isinstance(typ_, LazyType) else cls(typ_)
 
     def __eq__(self, o: object) -> bool:
         """
@@ -238,13 +233,12 @@ class LazyType(t.Generic[T]):
             try:
                 m = sys.modules[self.module]
             except KeyError:
-                if import_module:
-                    import importlib
-
-                    m = importlib.import_module(self.module)
-                else:
+                if not import_module:
                     raise ValueError(f"Module {self.module} not imported")
 
+                import importlib
+
+                m = importlib.import_module(self.module)
             self._runtime_class = t.cast("t.Type[T]", getattr(m, self.qualname))
 
         return self._runtime_class

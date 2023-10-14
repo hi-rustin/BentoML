@@ -106,7 +106,7 @@ def test_store(tmpdir: "Path"):
         store.get("test:version4")
 
     vers = store.list()
-    assert set([ver.tag for ver in vers]) == {
+    assert {ver.tag for ver in vers} == {
         Tag("test", "version1"),
         Tag("test", "version2"),
         Tag("test", "version3"),
@@ -115,7 +115,7 @@ def test_store(tmpdir: "Path"):
     }
 
     vers = store.list("test")
-    assert set([ver.tag for ver in vers]) == {
+    assert {ver.tag for ver in vers} == {
         Tag("test", "version1"),
         Tag("test", "version2"),
         Tag("test", "version3"),
@@ -123,7 +123,7 @@ def test_store(tmpdir: "Path"):
     }
 
     vers = store.list("test:version1")
-    assert set([ver.tag for ver in vers]) == {Tag("test", "version1")}
+    assert {ver.tag for ver in vers} == {Tag("test", "version1")}
 
     assert store.list("nonexistent:latest") == []
     assert store.list("test:version4") == []

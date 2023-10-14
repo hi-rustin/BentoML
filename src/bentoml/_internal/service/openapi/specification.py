@@ -323,9 +323,7 @@ bentoml_cattr.register_unstructure_hook_factory(
 # register all class in this structure whom
 # implement a '__preserve_cls_structure__' method
 def _preserve_cls_structure(data: dict[str, t.Any], cl: t.Type[_T]) -> _T:
-    if isinstance(data, cl):
-        return data
-    return cl(**data)
+    return data if isinstance(data, cl) else cl(**data)
 
 
 bentoml_cattr.register_structure_hook_func(

@@ -26,9 +26,7 @@ class LDA:
 
     def transform(self, X, y):
         self.fit(X, y)
-        # Project data onto vector
-        X_transform = X.dot(self.w)
-        return X_transform
+        return X.dot(self.w)
 
     def fit(self, X, y):
         # Separate data by class

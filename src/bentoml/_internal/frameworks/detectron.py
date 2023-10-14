@@ -119,13 +119,12 @@ def load_model(
     metadata = bento_model.info.metadata
     if metadata.get("_is_predictor", True):
         return Engine.DefaultPredictor(cfg)
-    else:
-        model = Modeling.build_model(cfg)
-        model.to(device).eval()
-        Checkpoint.DetectionCheckpointer(model).load(
-            bento_model.path_of(f"{MODEL_FILENAME}{DETECTOR_EXTENSION}")
-        )
-        return model
+    model = Modeling.build_model(cfg)
+    model.to(device).eval()
+    Checkpoint.DetectionCheckpointer(model).load(
+        bento_model.path_of(f"{MODEL_FILENAME}{DETECTOR_EXTENSION}")
+    )
+    return model
 
 
 def save_model(

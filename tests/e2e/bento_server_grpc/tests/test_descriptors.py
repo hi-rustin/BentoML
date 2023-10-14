@@ -194,7 +194,7 @@ async def test_json(host: str):
 @pytest.mark.asyncio
 async def test_file(host: str, bin_file: str):
     # Test File as binary
-    with open(str(bin_file), "rb") as f:
+    with open(bin_file, "rb") as f:
         fb = f.read()
 
     async with create_channel(host) as channel:
@@ -250,7 +250,7 @@ def assert_image(
 
 @pytest.mark.asyncio
 async def test_image(host: str, img_file: str):
-    with open(str(img_file), "rb") as f:
+    with open(img_file, "rb") as f:
         fb = f.read()
 
     async with create_channel(host) as channel:
@@ -371,7 +371,7 @@ def assert_multi_images(resp: pb.Response, method: str, im_file: str) -> bool:
 
 @pytest.mark.asyncio
 async def test_multipart(host: str, img_file: str):
-    with open(str(img_file), "rb") as f:
+    with open(img_file, "rb") as f:
         fb = f.read()
 
     async with create_channel(host) as channel:

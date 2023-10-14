@@ -34,7 +34,7 @@ def load(tag: Tag | str, *args: t.Any, **kwargs: t.Any):
 
 
 def load_runner(tag: Tag | str, *args: t.Any, **kwargs: t.Any):
-    if len(args) != 0 or len(kwargs) != 0:
+    if args or kwargs:
         logger.error(
             'The "%s.load_runner" method is deprecated. "load_runner" arguments will be ignored. Use "%s.get("%s").to_runner()" instead.',
             __name__,

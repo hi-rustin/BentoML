@@ -86,11 +86,7 @@ def get_default_svc_readme(svc: Service, svc_version: str | None = None) -> str:
         bentoml_version = BENTOML_VERSION
 
     if not svc_version:
-        if svc.tag and svc.tag.version:
-            svc_version = svc.tag.version
-        else:
-            svc_version = "None"
-
+        svc_version = svc.tag.version if svc.tag and svc.tag.version else "None"
     doc = f"""\
 # {svc.name}:{svc_version}
 
@@ -221,9 +217,7 @@ class Bento(StoreItem):
         # create ignore specs
         specs = BentoPathSpec(build_config.include, build_config.exclude)
 
-        # Copy all files base on include and exclude, into `src` directory
-        relpaths = [s for s in build_config.include if s.startswith("../")]
-        if len(relpaths) != 0:
+        if relpaths := [s for s in build_config.include if s.startswith("../")]:
             raise InvalidArgument(
                 "Paths outside of the build context directory cannot be included; use a symlink or copy those files into the working directory manually."
             )
@@ -253,15 +247,14 @@ class Bento(StoreItem):
         if build_config.description is None:
             with bento_fs.open(BENTO_README_FILENAME, "w", encoding="utf-8") as f:
                 f.write(get_default_svc_readme(svc, svc_version=tag.version))
+        elif build_config.description.startswith("file:"):
+            file_name = build_config.description[5:].strip()
+            copy_file_to_fs_folder(
+                file_name, bento_fs, dst_filename=BENTO_README_FILENAME
+            )
         else:
-            if build_config.description.startswith("file:"):
-                file_name = build_config.description[5:].strip()
-                copy_file_to_fs_folder(
-                    file_name, bento_fs, dst_filename=BENTO_README_FILENAME
-                )
-            else:
-                with bento_fs.open(BENTO_README_FILENAME, "w") as f:
-                    f.write(build_config.description)
+            with bento_fs.open(BENTO_README_FILENAME, "w") as f:
+                f.write(build_config.description)
 
         # Create 'apis/openapi.yaml' file
         bento_fs.makedir("apis")
@@ -478,10 +471,7 @@ class BentoModelInfo:
 def get_service_import_str(svc: Service | str):
     from ..service import Service
 
-    if isinstance(svc, Service):
-        return svc.get_service_import_origin()[0]
-    else:
-        return svc
+    return svc.get_service_import_origin()[0] if isinstance(svc, Service) else svc
 
 
 @attr.frozen(repr=False)

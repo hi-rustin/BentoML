@@ -92,13 +92,10 @@ def compatible_option(*param_decls: str, **attrs: t.Any):
                             opt.lstrip("--"),
                         )
                     elif isinstance(value, tuple):
-                        obsolete_format = " ".join(
-                            map(lambda s: "%s=%s" % (opt, s), value)
-                        )
+                        obsolete_format = " ".join(map(lambda s: f"{opt}={s}", value))
                         new_format = " ".join(
                             map(
-                                lambda s: "--%s %s=%s"
-                                % (equivalent[0], opt.lstrip("--"), s),
+                                lambda s: f'--{equivalent[0]} {opt.lstrip("--")}={s}',
                                 value,
                             )
                         )
@@ -369,66 +366,66 @@ def add_containerize_command(cli: Group) -> None:
     @cli.command()
     @click.argument("bento_tag", type=click.STRING, metavar="BENTO:TAG")
     @click.option(
-        "-t",
-        "--image-tag",
-        "--docker-image-tag",
-        metavar="NAME:TAG",
-        help="Name and optionally a tag (format: ``name:tag``) for building container, defaults to the bento tag.",
-        required=False,
-        callback=validate_container_tag,
-        multiple=True,
-    )
+            "-t",
+            "--image-tag",
+            "--docker-image-tag",
+            metavar="NAME:TAG",
+            help="Name and optionally a tag (format: ``name:tag``) for building container, defaults to the bento tag.",
+            required=False,
+            callback=validate_container_tag,
+            multiple=True,
+        )
     @click.option(
-        "--backend",
-        help="Define builder backend. Available: {}".format(
-            ", ".join(map(lambda s: f"``{s}``", REGISTERED_BACKENDS))
-        ),
-        required=False,
-        default="docker",
-        envvar="BENTOML_CONTAINERIZE_BACKEND",
-        type=click.STRING,
-    )
+            "--backend",
+            help="Define builder backend. Available: {}".format(
+                ", ".join(map(lambda s: f"``{s}``", REGISTERED_BACKENDS))
+            ),
+            required=False,
+            default="docker",
+            envvar="BENTOML_CONTAINERIZE_BACKEND",
+            type=click.STRING,
+        )
     @click.option(
-        "--enable-features",
-        multiple=True,
-        nargs=1,
-        metavar="FEATURE[,FEATURE]",
-        help="Enable additional BentoML features. Available features are: {}.".format(
-            ", ".join(map(lambda s: f"``{s}``", FEATURES))
-        ),
-    )
+            "--enable-features",
+            multiple=True,
+            nargs=1,
+            metavar="FEATURE[,FEATURE]",
+            help="Enable additional BentoML features. Available features are: {}.".format(
+                ", ".join(map(lambda s: f"``{s}``", FEATURES))
+            ),
+        )
     @click.option(
-        "--opt",
-        help="Define options for given backend. (format: ``--opt target=foo --opt build-arg=foo=BAR --opt iidfile:/path/to/file --opt no-cache``)",
-        required=False,
-        multiple=True,
-        callback=opt_callback,
-        metavar="ARG=VALUE[,ARG=VALUE]",
-    )
+            "--opt",
+            help="Define options for given backend. (format: ``--opt target=foo --opt build-arg=foo=BAR --opt iidfile:/path/to/file --opt no-cache``)",
+            required=False,
+            multiple=True,
+            callback=opt_callback,
+            metavar="ARG=VALUE[,ARG=VALUE]",
+        )
     @click.option(
-        "--run-as-root",
-        help="Whether to run backend with as root.",
-        is_flag=True,
-        required=False,
-        default=False,
-        type=bool,
-    )
+            "--run-as-root",
+            help="Whether to run backend with as root.",
+            is_flag=True,
+            required=False,
+            default=False,
+            type=bool,
+        )
     @optgroup.group(
-        "Equivalent options", help="Equivalent option group for backward compatibility"
-    )
+            "Equivalent options", help="Equivalent option group for backward compatibility"
+        )
     @compatible_options_group
     @optgroup.group("Buildx options", help="[Only available with '--backend=buildx']")
     @buildx_options_group
     @kwargs_transformers(transformer=normalize_none_type)
     def containerize(  # type: ignore
-        bento_tag: str,
-        image_tag: tuple[str] | None,
-        backend: DefaultBuilder,
-        enable_features: tuple[str] | None,
-        run_as_root: bool,
-        _memoized: dict[str, t.Any],
-        **kwargs: t.Any,  # pylint: disable=unused-argument
-    ) -> None:
+            bento_tag: str,
+            image_tag: tuple[str] | None,
+            backend: DefaultBuilder,
+            enable_features: tuple[str] | None,
+            run_as_root: bool,
+            _memoized: dict[str, t.Any],
+            **kwargs: t.Any,  # pylint: disable=unused-argument
+        ) -> None:
         """Containerizes given Bento into an OCI-compliant container, with any given OCI builder.
 
         \b
@@ -489,7 +486,7 @@ def add_containerize_command(cli: Group) -> None:
         # Run healthcheck before containerizing
         # build will also run healthcheck, but we want to fail early.
         if not container.health(backend):
-            raise BentoMLException("Failed to use backend %s." % backend)
+            raise BentoMLException(f"Failed to use backend {backend}.")
 
         # --progress is not available without BuildKit.
         if not enable_buildkit(backend=backend) and "progress" in _memoized:

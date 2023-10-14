@@ -276,10 +276,10 @@ class Service:
                     object.__setattr__(self, "_import_str", f"{import_module}:{name}")
                     break
 
-            if not self._import_str:
-                raise BentoMLException(
-                    "Failed to get service import origin, bentoml.Service object must be assigned to a variable at module level"
-                )
+        if not self._import_str:
+            raise BentoMLException(
+                "Failed to get service import origin, bentoml.Service object must be assigned to a variable at module level"
+            )
 
         assert self._working_dir is not None
 
@@ -345,10 +345,7 @@ class Service:
 
     @property
     def doc(self) -> str:
-        if self.bento is not None:
-            return self.bento.doc
-
-        return get_default_svc_readme(self)
+        return get_default_svc_readme(self) if self.bento is None else self.bento.doc
 
     @property
     def openapi_spec(self) -> OpenAPISpecification:
@@ -439,23 +436,22 @@ class Service:
         from bentoml.exceptions import BadInput
 
         if not issubclass(interceptor_cls, grpc.aio.ServerInterceptor):
-            if isinstance(interceptor_cls, partial):
-                if options:
-                    logger.debug(
-                        "'%s' is a partial class, hence '%s' will be ignored.",
-                        interceptor_cls,
-                        options,
-                    )
-                if not issubclass(interceptor_cls.func, grpc.aio.ServerInterceptor):
-                    raise BadInput(
-                        "'partial' class is not a subclass of 'grpc.aio.ServerInterceptor'."
-                    )
-                self.interceptors.append(interceptor_cls)
-            else:
+            if not isinstance(interceptor_cls, partial):
                 raise BadInput(
                     f"{interceptor_cls} is not a subclass of 'grpc.aio.ServerInterceptor'."
                 )
 
+            if options:
+                logger.debug(
+                    "'%s' is a partial class, hence '%s' will be ignored.",
+                    interceptor_cls,
+                    options,
+                )
+            if not issubclass(interceptor_cls.func, grpc.aio.ServerInterceptor):
+                raise BadInput(
+                    "'partial' class is not a subclass of 'grpc.aio.ServerInterceptor'."
+                )
+            self.interceptors.append(interceptor_cls)
         self.interceptors.append(partial(interceptor_cls, **options))
 
     def add_grpc_handlers(self, handlers: list[grpc.GenericRpcHandler]) -> None:

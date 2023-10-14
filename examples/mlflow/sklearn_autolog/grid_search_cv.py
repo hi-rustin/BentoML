@@ -24,13 +24,13 @@ def main():
     # show data logged in the parent run
     print("========== parent run ==========")
     for key, data in fetch_logged_data(run_id).items():
-        print("\n---------- logged {} ----------".format(key))
+        print(f"\n---------- logged {key} ----------")
         pprint(data)
 
     # show data logged in the child runs
-    filter_child_runs = "tags.mlflow.parentRunId = '{}'".format(run_id)
+    filter_child_runs = f"tags.mlflow.parentRunId = '{run_id}'"
     runs = mlflow.search_runs(filter_string=filter_child_runs)
-    param_cols = ["params.{}".format(p) for p in parameters.keys()]
+    param_cols = [f"params.{p}" for p in parameters]
     metric_cols = ["metrics.mean_test_score"]
 
     print("\n========== child runs ==========\n")

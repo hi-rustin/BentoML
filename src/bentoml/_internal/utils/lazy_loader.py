@@ -39,7 +39,7 @@ class LazyLoader(types.ModuleType):
         self._exc = exc
         self._module: types.ModuleType | None = None
 
-        super().__init__(str(name))
+        super().__init__(name)
 
     def _load(self) -> types.ModuleType:
         """Load the module and insert it into the parent's globals."""

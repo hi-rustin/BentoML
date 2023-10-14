@@ -26,24 +26,23 @@ def get_resource(
     if resource_kind not in _RESOURCE_REGISTRY:
         raise BentoMLConfigException(f"Unknown resource kind '{resource_kind}'.")
 
+    if resource_kind not in resources:
+        return None
     resource: t.Type[Resource[t.Any]] = _RESOURCE_REGISTRY[resource_kind]
 
-    if resource_kind in resources:
-        if resources[resource_kind] == "system":
-            return resource.from_system()
-        else:
-            res = resource.from_spec(resources[resource_kind])
-            if validate:
-                resource.validate(res)
-            return res
-    else:
-        return None
+    if resources[resource_kind] == "system":
+        return resource.from_system()
+    res = resource.from_spec(resources[resource_kind])
+    if validate:
+        resource.validate(res)
+    return res
 
 
 def system_resources() -> dict[str, t.Any]:
-    res: dict[str, t.Any] = {}
-    for resource_kind, resource in _RESOURCE_REGISTRY.items():
-        res[resource_kind] = resource.from_system()
+    res: dict[str, t.Any] = {
+        resource_kind: resource.from_system()
+        for resource_kind, resource in _RESOURCE_REGISTRY.items()
+    }
     return res
 
 
@@ -92,8 +91,7 @@ class CpuResource(Resource[float], resource_id="cpu"):
         if isinstance(spec, (int, float)):
             return float(spec)
 
-        milli_match = re.match("([0-9]+)m", spec)
-        if milli_match:
+        if milli_match := re.match("([0-9]+)m", spec):
             return float(milli_match[1]) / 1000.0
 
         try:
@@ -259,9 +257,9 @@ class NvidiaGpuResource(Resource[t.List[int]], resource_id="nvidia.com/gpu"):
 
     @classmethod
     def validate(cls, val: t.List[int]):
-        if any([gpu_index < 0 for gpu_index in val]):
+        if any(gpu_index < 0 for gpu_index in val):
             raise BentoMLConfigException(f"Negative GPU device in {val}.")
-        if any([gpu_index >= len(cls.from_system()) for gpu_index in val]):
+        if any(gpu_index >= len(cls.from_system()) for gpu_index in val):
             raise BentoMLConfigException(
                 f"GPU device index in {val} is greater than the system available: {cls.from_system()}"
             )

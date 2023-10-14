@@ -146,7 +146,7 @@ async def test_pandas(host: str):
 @pytest.mark.asyncio
 async def test_file(host: str, bin_file: str):
     # Test File as binary
-    with open(str(bin_file), "rb") as f:
+    with open(bin_file, "rb") as f:
         b = f.read()
 
     await async_request(
@@ -179,7 +179,7 @@ async def test_file(host: str, bin_file: str):
 
 @pytest.mark.asyncio
 async def test_image(host: str, img_file: str):
-    with open(str(img_file), "rb") as f1:
+    with open(img_file, "rb") as f1:
         img_bytes = f1.read()
 
     status, headers, body = await async_request(
@@ -207,7 +207,7 @@ async def test_image(host: str, img_file: str):
         assert_status=400,
     )
 
-    with open(str(img_file), "rb") as f1:
+    with open(img_file, "rb") as f1:
         b = f1.read()
     await async_request(
         "POST",

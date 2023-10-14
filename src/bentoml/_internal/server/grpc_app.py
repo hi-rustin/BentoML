@@ -270,8 +270,10 @@ class Server(aio._server.Server):
             self.bento_service.on_grpc_server_startup,
         ]
         if BentoMLContainer.development_mode.get():
-            for runner in self.bento_service.runners:
-                on_startup.append(partial(runner.init_local, quiet=True))
+            on_startup.extend(
+                partial(runner.init_local, quiet=True)
+                for runner in self.bento_service.runners
+            )
         else:
             for runner in self.bento_service.runners:
                 if runner.embedded:
@@ -341,9 +343,7 @@ class Server(aio._server.Server):
             *self.bento_service.shutdown_hooks,
             self.bento_service.on_grpc_server_shutdown,
         ]
-        for runner in self.bento_service.runners:
-            on_shutdown.append(runner.destroy)
-
+        on_shutdown.extend(runner.destroy for runner in self.bento_service.runners)
         return on_shutdown
 
     async def shutdown(self):

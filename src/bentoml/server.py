@@ -63,17 +63,16 @@ class Server(ABC):
         timeout: float = 10,
     ):
         if bento is not None:
-            if not servable:
-                logger.warning(
-                    "'bento' is deprecated, either remove it as a kwargs or pass '%s' as the first positional argument",
-                    bento,
-                )
-                servable = bento
-            else:
+            if servable:
                 raise BentoMLException(
                     "Cannot use both 'bento' and 'servable' as kwargs as 'bento' is deprecated."
                 )
 
+            logger.warning(
+                "'bento' is deprecated, either remove it as a kwargs or pass '%s' as the first positional argument",
+                bento,
+            )
+            servable = bento
         self.servable = servable
         # backward compatibility
         self.bento = servable

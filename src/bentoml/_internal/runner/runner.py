@@ -200,11 +200,7 @@ class Runner(AbstractRunner):
 
         runners_config = BentoMLContainer.config.runners.get()
         # If given runner is configured, then use it. Otherwise use the default configuration.
-        if name in runners_config:
-            config = runners_config[name]
-        else:
-            config = runners_config
-
+        config = runners_config[name] if name in runners_config else runners_config
         if models is None:
             models = []
 

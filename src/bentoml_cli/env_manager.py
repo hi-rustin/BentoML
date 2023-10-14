@@ -43,10 +43,9 @@ def remove_env_arg(cmd_args: list[str]) -> list[str]:
             if "=" not in arg:
                 indices_to_remove.append(i + 1)
 
-    new_cmd_args: list[str] = []
-    for i, arg in enumerate(cmd_args):
-        if i not in indices_to_remove:
-            new_cmd_args.append(arg)
+    new_cmd_args: list[str] = [
+        arg for i, arg in enumerate(cmd_args) if i not in indices_to_remove
+    ]
     return new_cmd_args
 
 

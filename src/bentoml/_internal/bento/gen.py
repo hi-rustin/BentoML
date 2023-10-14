@@ -1,6 +1,7 @@
 """
 This module is shim for bentoctl. NOT FOR DIRECT USE.
 """
+
 from __future__ import annotations
 
 import logging
@@ -19,8 +20,7 @@ __all__ = ["generate_dockerfile"]
 logger = logging.getLogger(__name__)
 
 warnings.warn(
-    "%s is deprecated. Make sure to use 'bentoml.container.build' and 'bentoml.container.health' instead."
-    % __name__,
+    f"{__name__} is deprecated. Make sure to use 'bentoml.container.build' and 'bentoml.container.health' instead.",
     DeprecationWarning,
     stacklevel=4,
 )

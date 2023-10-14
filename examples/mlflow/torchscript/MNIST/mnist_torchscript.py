@@ -38,8 +38,7 @@ class Net(nn.Module):
         x = F.relu(x)
         x = self.dropout2(x)
         x = self.fc2(x)
-        output = F.log_softmax(x, dim=1)
-        return output
+        return F.log_softmax(x, dim=1)
 
 
 def train(args, model, device, train_loader, optimizer, epoch):
@@ -203,9 +202,7 @@ def main():
     actual = test_target[0].item()
     predicted = np.argmax(prediction).item()
     print(
-        "\nPREDICTION RESULT: ACTUAL: {}, PREDICTED: {}".format(
-            str(actual), str(predicted)
-        )
+        f"\nPREDICTION RESULT: ACTUAL: {str(actual)}, PREDICTED: {str(predicted)}"
     )
 
     # Option2: save MLflow model and import MLflow pyfunc model to BentoML
@@ -228,9 +225,7 @@ def main():
         actual = test_target[0].item()
         predicted = np.argmax(prediction).item()
         print(
-            "\nPREDICTION RESULT: ACTUAL: {}, PREDICTED: {}".format(
-                str(actual), str(predicted)
-            )
+            f"\nPREDICTION RESULT: ACTUAL: {str(actual)}, PREDICTED: {str(predicted)}"
         )
 
 

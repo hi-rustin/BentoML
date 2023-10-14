@@ -123,7 +123,7 @@ class InferenceAPI:
                         isinstance(annotation, t.Type)
                         and annotation != inspect.Signature.empty
                     ):
-                        if not annotation == Context:
+                        if annotation != Context:
                             raise TypeError(
                                 f"Expected type of argument '{second_arg}' to be '{input_type}', got '{sig.parameters[second_arg].annotation}'"
                             )
@@ -151,15 +151,12 @@ class InferenceAPI:
     def _validate_name(api_name: str):
         if not api_name.isidentifier():
             raise InvalidArgument(
-                "Invalid API name: '{}', a valid identifier may only contain letters,"
-                " numbers, underscores and not starting with a number.".format(api_name)
+                f"Invalid API name: '{api_name}', a valid identifier may only contain letters, numbers, underscores and not starting with a number."
             )
 
         if api_name in RESERVED_API_NAMES:
             raise InvalidArgument(
-                "Reserved API name: '{}' is reserved for infra endpoints".format(
-                    api_name
-                )
+                f"Reserved API name: '{api_name}' is reserved for infra endpoints"
             )
 
     @staticmethod
@@ -168,12 +165,10 @@ class InferenceAPI:
             r"[?#]+|^(//)|^:", route
         ):  # contains '?' or '#' OR  start with '//' OR start with ':'
             # https://tools.ietf.org/html/rfc3986#page-22
-            raise InvalidArgument(
-                "The path {} contains illegal url characters".format(route)
-            )
+            raise InvalidArgument(f"The path {route} contains illegal url characters")
         if route in RESERVED_API_NAMES:
             raise InvalidArgument(
-                "Reserved API route: '{}' is reserved for infra endpoints".format(route)
+                f"Reserved API route: '{route}' is reserved for infra endpoints"
             )
 
 
